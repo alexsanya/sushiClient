@@ -97,11 +97,11 @@ async function supplyAndApproveTokens(provider: JsonRpcProvider, user: Wallet, a
         erc20Bcontract.mint(amountB)
     ]);
     await Promise.all([ mintAtx.wait(), mintBtx.wait() ]);
-    const [transferA, transferB] = await Promise.all([
+    const [txTransferA, txTransferB] = await Promise.all([
         erc20Acontract.transfer(user.address, amountA),
         erc20Bcontract.transfer(user.address, amountB)
     ]);
-    await Promise.all([ transferA.wait(), transferB.wait() ]);
+    await Promise.all([ txTransferA.wait(), txTransferB.wait() ]);
 
     const [balanceAafter, balanceBafter] = await Promise.all([
         erc20Acontract.balanceOf(user.address),
@@ -111,12 +111,10 @@ async function supplyAndApproveTokens(provider: JsonRpcProvider, user: Wallet, a
     console.debug({ balanceBbefore, balanceBafter });
 
     //approvals
-    //const [approveA, approveB] = await Promise.all([
-    await (erc20Acontract.connect(user) as Contract).approve(NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, balanceAafter);
-    await (erc20Bcontract.connect(user) as Contract).approve(NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, balanceBafter);
-    //]);
+    const txApproveA = await (erc20Acontract.connect(user) as Contract).approve(NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, balanceAafter);
+    const txApproveB = await (erc20Bcontract.connect(user) as Contract).approve(NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, balanceBafter);
 
-    //await Promise.all([ approveA.wait(), approveB.wait() ]);
+    await Promise.all([ txApproveA.wait(), txApproveB.wait() ]);
 }
 
 function buildMintTransaction(from: string, position: Position): TransactionRequest {
