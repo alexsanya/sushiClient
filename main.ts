@@ -1,10 +1,12 @@
 import { computePoolAddress, FeeAmount, MintOptions, nearestUsableTick, NonfungiblePositionManager } from '@uniswap/v3-sdk'
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
+import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import { Token, BigintIsh, Percent } from '@uniswap/sdk-core'
 import { Pool, Position } from '@uniswap/v3-sdk'
 import { Contract, ethers, JsonRpcProvider, Provider, TransactionRequest, Wallet } from 'ethers';
 import { CHAIN_ID, NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, POOL_FACTORY_CONTRACT_ADDRESS, POOL_FEE, TOKEN_A_ADDRESS, TOKEN_A_DECIMALS, TOKEN_A_MINTER_ADDRESS, TOKEN_B_ADDRESS, TOKEN_B_DECIMALS, TOKEN_B_MINTER_ADDRESS } from './chains/sepolia';
 import { ERC20_ABI } from './abis/erc20';
+import JSBI from 'jsbi';
 
 
 const tokenA: Token = new Token(CHAIN_ID, TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
@@ -15,6 +17,16 @@ const USER_PRIVATE_KEY: string = process.env['USER_PRIVATE_KEY'] as string;
 
 const MAX_FEE_PER_GAS = 250000000000;
 const MAX_PRIORITY_FEE_PER_GAS = 250000000000;
+
+interface PositionInfo {
+    tickLower: number
+    tickUpper: number
+    liquidity: JSBI
+    feeGrowthInside0LastX128: JSBI
+    feeGrowthInside1LastX128: JSBI
+    tokensOwed0: JSBI
+    tokensOwed1: JSBI
+}
 
 function getPoolContract(provider: Provider): Contract {
     const currentPoolAddress = computePoolAddress({
@@ -133,9 +145,7 @@ function buildMintTransaction(from: string, position: Position): TransactionRequ
     }
 }
 
-async function mintPosition(amountA: BigintIsh, amountB: BigintIsh): Promise<void> {
-    const provider = new JsonRpcProvider(process.env['PROVIDER_RPC']);
-    const user = new Wallet(USER_PRIVATE_KEY, provider);
+async function mintPosition(provider: JsonRpcProvider, user: Wallet, amountA: BigintIsh, amountB: BigintIsh): Promise<void> {
 
     console.log(`User's wallet address: ${user.address}`);
     const poolContract = getPoolContract(provider); 
@@ -152,8 +162,35 @@ async function mintPosition(amountA: BigintIsh, amountB: BigintIsh): Promise<voi
 
 }
 
+async function getPositionInfo(nfpmContract: Contract, positionHolder: string, positionInder: number): Promise<PositionInfo> {
+    const tokenId = await nfpmContract.tokenOfOwnerByIndex(positionHolder, positionInder);
+    console.debug({tokenId});
+    const position = await nfpmContract.positions(tokenId);
+    return {
+        tickLower: position.tickLower,
+        tickUpper: position.tickUpper,
+        liquidity: position.liquidity,
+        feeGrowthInside0LastX128: position.feeGrowthInside0LastX128,
+        feeGrowthInside1LastX128: position.feeGrowthInside1LastX128,
+        tokensOwed0: position.tokensOwed0,
+        tokensOwed1: position.tokensOwed1
+    }
+}
+
 (async function main() {
     const amountA: BigintIsh = "9990000000000";
     const amountB: BigintIsh = "10500090000000000000000000";
-    await mintPosition(amountA, amountB);
+    const provider = new JsonRpcProvider(process.env['PROVIDER_RPC']);
+    const user = new Wallet(USER_PRIVATE_KEY, provider);
+    const nfpmContract = new ethers.Contract(
+        NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+        INONFUNGIBLE_POSITION_MANAGER.abi,
+        provider
+    );
+    const numPositionsBefore = await nfpmContract.balanceOf(user.address)
+    await mintPosition(provider, user, amountA, amountB);
+    const numPositionsAfter = await nfpmContract.balanceOf(user.address)
+    console.log({ numPositionsBefore, numPositionsAfter });
+    const positionInfo = await getPositionInfo(nfpmContract, user.address, 0);
+    console.log(positionInfo);
 })()
