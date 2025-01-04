@@ -17,14 +17,12 @@ const { command, privateKey, rpcUrl } = mainOptions;
 const chain = 'sepolia';
 
 const additionalOptions: Record<string, unknown> = {};
-if (command === 'setUp') {
-    switch (chain) {
-        case 'sepolia':
-            additionalOptions.CHAIN_ID = SEPOLIA_CHAIN_ID
-            break;
-        default:
-            throw new Error(`Unknown chain ${chain}`);
-    }
+switch (chain) {
+    case 'sepolia':
+        additionalOptions.CHAIN_ID = SEPOLIA_CHAIN_ID
+        break;
+    default:
+        throw new Error(`Unknown chain ${chain}`);
 }
 
 export const envs = {

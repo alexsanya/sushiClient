@@ -1,7 +1,11 @@
+import { Token } from "@uniswap/sdk-core";
 import { CHAIN_ID } from "../chains/sepolia";
 import { envs } from "./config/env";
+import { AddLiquidityDTO } from "./dtos";
 import { V3AMMimpl } from "./infrastructure/v3AMM.impl";
 import { setUpFork } from "./operations/setUpFork";
+import { CHAIN_CONFIGS } from "../chains";
+import { FeeAmount } from "@uniswap/v3-sdk";
 
 (BigInt.prototype as any).toJSON = function () {
     return this.toString();
@@ -41,8 +45,27 @@ async function options() {
     console.log(positions);
 }
 
-
-
 async function addLiquidity() {
-
+    const chainId = (envs as Record<string, string>).CHAIN_ID;
+    const {
+        CHAIN_ID,
+        POOL_FEE,
+        TOKEN_A_ADDRESS,
+        TOKEN_B_ADDRESS,
+        AMOUNT_A,
+        AMOUNT_B,
+        TOKEN_A_DECIMALS,
+        TOKEN_B_DECIMALS
+    } = CHAIN_CONFIGS[chainId];
+    const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
+    const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
+    const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
+    const poolFee: FeeAmount = POOL_FEE;
+    const result = await v3Amm.addLiquidity(new AddLiquidityDTO(
+        tokenA,
+        tokenB,
+        AMOUNT_A,
+        AMOUNT_B,
+        poolFee
+    ));
 }

@@ -7,24 +7,32 @@ import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contr
 import { Contract } from "web3";
 import { CHAIN_CONFIGS } from "../../chains";
 import { BigintIsh } from "@uniswap/sdk-core";
+import { AddLiquidityHelper } from "./AddLiquidityHelper";
 
 export class V3AMMimpl implements V3AMM {
+    private chainId: string;
     private signer: Wallet;
+    private provider: JsonRpcProvider;
     //@ts-ignore
     private nfpmContract: Contract;
 
     constructor(chainId: string, userPrivateKey: string) {
-        const provider = new JsonRpcProvider(envs.PROVIDER_RPC);
-        this.signer = new Wallet(userPrivateKey, provider);
+        this.chainId = chainId;
+        this.provider = new JsonRpcProvider(envs.PROVIDER_RPC);
+        this.signer = new Wallet(userPrivateKey, this.provider);
 
         this.nfpmContract = new ethers.Contract(
             CHAIN_CONFIGS[chainId].NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
             INONFUNGIBLE_POSITION_MANAGER.abi,
-            provider
+            this.provider
         );
     }
 
     async addLiquidity(addLiquidityDTO: AddLiquidityDTO): Promise<AddLiquidityResult> {
+        const addLiquidityHelper = new AddLiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
+        const transaction = await addLiquidityHelper.buildAddLiquidityTransaction();
+        const txRes = await this.signer.sendTransaction(transaction);
+        console.log({ txRes });
         return {};
     }
     async withdrawLiquidity(withdrawLiquidityDTO: WithdrawLiquidityDTO): Promise<WithdrawLiquidityResult> {
@@ -50,4 +58,5 @@ export class V3AMMimpl implements V3AMM {
             tokensOwed1: position.tokensOwed1
         }));
     }
+
 }
