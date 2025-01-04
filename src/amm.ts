@@ -1,5 +1,4 @@
 import { Token } from "@uniswap/sdk-core";
-import { CHAIN_ID } from "../chains/sepolia";
 import { envs } from "./config/env";
 import { LiquidityDTO } from "./dtos";
 import { V3AMMimpl } from "./infrastructure/v3AMM.impl";
@@ -44,7 +43,7 @@ import { FeeAmount } from "@uniswap/v3-sdk";
 })()
 
 async function options() {
-    const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
+    const v3Amm = new V3AMMimpl((envs as Record<string, string>).CHAIN_ID, envs.USER_PRIVATE_KEY as string);
     const positions = await v3Amm.positions();
     console.log(positions);
 }

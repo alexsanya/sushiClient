@@ -47,10 +47,13 @@ export class V3AMMimpl implements V3AMM {
 
     async positions(): Promise<PositionInfo[]> {
         const { address } = this.signer;
+        console.log(`Signer address: ${address}`);
         const positionsTotal = await this.nfpmContract.balanceOf(address);
+        console.log({positionsTotal});
         const pendingPositions = Array.from({ length: Number(positionsTotal) })
             .map((_, i) => this.nfpmContract.tokenOfOwnerByIndex(address, i));
         const tokenIds = await Promise.all(pendingPositions);
+        console.log(tokenIds);
         const pendingPositionsData = tokenIds.map((tokenId: BigintIsh) => this.nfpmContract.positions(tokenId));
         const positionsRawData = await Promise.all(pendingPositionsData);
 
