@@ -7,10 +7,12 @@ import { Contract, ethers, JsonRpcProvider, Provider, TransactionRequest, Wallet
 import { CHAIN_ID, NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, POOL_FACTORY_CONTRACT_ADDRESS, POOL_FEE, TOKEN_A_ADDRESS, TOKEN_A_DECIMALS, TOKEN_A_MINTER_ADDRESS, TOKEN_B_ADDRESS, TOKEN_B_DECIMALS, TOKEN_B_MINTER_ADDRESS } from './chains/sepolia';
 import { ERC20_ABI } from './abis/erc20';
 import JSBI from 'jsbi';
+import { V3AMMimpl } from './src/infrastructure/v3AMM.impl';
+import { envs } from './src/config/env';
 
 
-const tokenA: Token = new Token(CHAIN_ID, TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
-const tokenB: Token = new Token(CHAIN_ID, TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
+const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
+const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
 const poolFee: FeeAmount = POOL_FEE;
 
 const USER_PRIVATE_KEY: string = process.env['USER_PRIVATE_KEY'] as string;
@@ -209,7 +211,7 @@ async function withdrawLiquidity(pool: Pool, tokenId: BigintIsh, liquidityPercen
       console.log(txRes);
 }
 
-(async function main(operation: string) {
+async function mainLegacy(operation: string) {
     const provider = new JsonRpcProvider(process.env['PROVIDER_RPC']);
     const user = new Wallet(USER_PRIVATE_KEY, provider);
     console.log(`User's wallet address: ${user.address}`);
@@ -234,4 +236,14 @@ async function withdrawLiquidity(pool: Pool, tokenId: BigintIsh, liquidityPercen
     }
     const numPositionsAfter = await nfpmContract.balanceOf(user.address)
     console.log({ numPositionsBefore, numPositionsAfter });
-})('withdraw')
+}
+
+(async function main() {
+    if (!envs.USER_PRIVATE_KEY) {
+        throw new Error("Private key not found");
+    }
+    const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY);
+    const positions = v3Amm.positions();
+    console.log(positions);
+
+})()

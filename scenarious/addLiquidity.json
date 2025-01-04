@@ -1,0 +1,11 @@
+[
+    {
+        "operation": "addLiquidity",
+        "parameters": {
+            "tokenA": "0x1a6922a04b14b1560875d77a8c02ab3c0e354020",
+            "tokenB": "0x59e3a6011631de8e5302e5138d7eb3006e607b75",
+            "valueA": "",
+            "valueB": ""
+        }
+    }
+]
