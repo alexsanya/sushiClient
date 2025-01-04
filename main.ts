@@ -1,7 +1,7 @@
-import { computePoolAddress, FeeAmount, MintOptions, nearestUsableTick, NonfungiblePositionManager } from '@uniswap/v3-sdk'
+import { CollectOptions, computePoolAddress, FeeAmount, MintOptions, nearestUsableTick, NonfungiblePositionManager, RemoveLiquidityOptions } from '@uniswap/v3-sdk'
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
-import { Token, BigintIsh, Percent } from '@uniswap/sdk-core'
+import { Token, BigintIsh, Percent, CurrencyAmount } from '@uniswap/sdk-core'
 import { Pool, Position } from '@uniswap/v3-sdk'
 import { Contract, ethers, JsonRpcProvider, Provider, TransactionRequest, Wallet } from 'ethers';
 import { CHAIN_ID, NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, POOL_FACTORY_CONTRACT_ADDRESS, POOL_FEE, TOKEN_A_ADDRESS, TOKEN_A_DECIMALS, TOKEN_A_MINTER_ADDRESS, TOKEN_B_ADDRESS, TOKEN_B_DECIMALS, TOKEN_B_MINTER_ADDRESS } from './chains/sepolia';
@@ -17,6 +17,10 @@ const USER_PRIVATE_KEY: string = process.env['USER_PRIVATE_KEY'] as string;
 
 const MAX_FEE_PER_GAS = 250000000000;
 const MAX_PRIORITY_FEE_PER_GAS = 250000000000;
+
+
+const amountA: BigintIsh = "9990000000000";
+const amountB: BigintIsh = "10500090000000000000000000";
 
 interface PositionInfo {
     tickLower: number
@@ -124,9 +128,9 @@ async function supplyAndApproveTokens(provider: JsonRpcProvider, user: Wallet, a
 
     //approvals
     const txApproveA = await (erc20Acontract.connect(user) as Contract).approve(NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, balanceAafter);
+    await txApproveA.wait();
     const txApproveB = await (erc20Bcontract.connect(user) as Contract).approve(NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS, balanceBafter);
-
-    await Promise.all([ txApproveA.wait(), txApproveB.wait() ]);
+    await txApproveB.wait();
 }
 
 function buildMintTransaction(from: string, position: Position): TransactionRequest {
@@ -145,26 +149,15 @@ function buildMintTransaction(from: string, position: Position): TransactionRequ
     }
 }
 
-async function mintPosition(provider: JsonRpcProvider, user: Wallet, amountA: BigintIsh, amountB: BigintIsh): Promise<void> {
-
-    console.log(`User's wallet address: ${user.address}`);
-    const poolContract = getPoolContract(provider); 
-    console.log(`Pool address: ${poolContract.address}`);
-    const configuredPool = await getConfiguredPool(poolContract);
-
-    await supplyAndApproveTokens(provider, user, amountA, amountB);
-
-    const position = getPosition(configuredPool, amountA, amountB);
+async function mintPosition(pool: Pool, user: Wallet, amountA: BigintIsh, amountB: BigintIsh): Promise<void> {
+    const position = getPosition(pool, amountA, amountB);
     const transaction = buildMintTransaction(user.address, position);
 
     const txRes = await user.sendTransaction(transaction);
     console.log({ txRes });
-
 }
 
-async function getPositionInfo(nfpmContract: Contract, positionHolder: string, positionInder: number): Promise<PositionInfo> {
-    const tokenId = await nfpmContract.tokenOfOwnerByIndex(positionHolder, positionInder);
-    console.debug({tokenId});
+async function getPositionInfo(nfpmContract: Contract, tokenId: BigintIsh): Promise<PositionInfo> {
     const position = await nfpmContract.positions(tokenId);
     return {
         tickLower: position.tickLower,
@@ -177,20 +170,68 @@ async function getPositionInfo(nfpmContract: Contract, positionHolder: string, p
     }
 }
 
-(async function main() {
-    const amountA: BigintIsh = "9990000000000";
-    const amountB: BigintIsh = "10500090000000000000000000";
+async function withdrawLiquidity(pool: Pool, tokenId: BigintIsh, liquidityPercentage: Percent, user: Wallet) {
+    const currentPosition = getPosition(pool, amountA, amountB);
+    const collectOptions: Omit<CollectOptions, 'tokenId'> = {
+        expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(
+          tokenA,
+          0
+        ),
+        expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(
+          tokenB,
+          0
+        ),
+        recipient: user.address
+    }
+    const removeLiquidityOptions: RemoveLiquidityOptions = {
+        deadline: Math.floor(Date.now() / 1000) + 60 * 20,
+        slippageTolerance: new Percent(50, 10_000),
+        tokenId: JSBI.BigInt(tokenId.toString()),
+        // percentage of liquidity to remove
+        liquidityPercentage,
+        collectOptions,
+    }
+    const { calldata, value } = NonfungiblePositionManager.removeCallParameters(
+        currentPosition,
+        removeLiquidityOptions
+    )
+    const transaction = {
+        data: calldata,
+        to: NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+        value: value,
+        from: user.address,
+        maxFeePerGas: MAX_FEE_PER_GAS,
+        maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS,
+      }
+      
+      const txRes = await user.sendTransaction(transaction)
+
+      console.log(txRes);
+}
+
+(async function main(operation: string) {
     const provider = new JsonRpcProvider(process.env['PROVIDER_RPC']);
     const user = new Wallet(USER_PRIVATE_KEY, provider);
+    console.log(`User's wallet address: ${user.address}`);
     const nfpmContract = new ethers.Contract(
         NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
         INONFUNGIBLE_POSITION_MANAGER.abi,
         provider
     );
     const numPositionsBefore = await nfpmContract.balanceOf(user.address)
-    await mintPosition(provider, user, amountA, amountB);
+    const poolContract = getPoolContract(provider); 
+    const configuredPool = await getConfiguredPool(poolContract);
+    if (operation === 'add') {
+        await supplyAndApproveTokens(provider, user, amountA, amountB);
+        await mintPosition(configuredPool, user, amountA, amountB);
+        const tokenId = await nfpmContract.tokenOfOwnerByIndex(user.address, 0);
+        const positionInfo = await getPositionInfo(nfpmContract, tokenId);
+        console.log(positionInfo);
+    } else {
+        const tokenId = await nfpmContract.tokenOfOwnerByIndex(user.address, 0);
+        console.debug({tokenId});
+        await withdrawLiquidity(configuredPool, tokenId, new Percent(1), user);
+    }
     const numPositionsAfter = await nfpmContract.balanceOf(user.address)
     console.log({ numPositionsBefore, numPositionsAfter });
-    const positionInfo = await getPositionInfo(nfpmContract, user.address, 0);
-    console.log(positionInfo);
-})()
+})('withdraw')
