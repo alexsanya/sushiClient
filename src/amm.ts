@@ -28,6 +28,10 @@ import { FeeAmount } from "@uniswap/v3-sdk";
             console.log('Adding liquidity: ');
             await addLiquidity();
             break;
+        case 'withdrawLiquidity':
+            console.log('Withdrawing liquidity: ');
+            await withdrawLiquidity();
+            break;
         case 'setUp':
             console.log('Preparing chain fork: ');
             await setUpFork((envs as Record<string, string>).CHAIN_ID);
@@ -62,6 +66,31 @@ async function addLiquidity() {
     const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
     const poolFee: FeeAmount = POOL_FEE;
     const result = await v3Amm.addLiquidity(new AddLiquidityDTO(
+        tokenA,
+        tokenB,
+        AMOUNT_A,
+        AMOUNT_B,
+        poolFee
+    ));
+}
+
+async function withdrawLiquidity() {
+    const chainId = (envs as Record<string, string>).CHAIN_ID;
+    const {
+        CHAIN_ID,
+        POOL_FEE,
+        TOKEN_A_ADDRESS,
+        TOKEN_B_ADDRESS,
+        AMOUNT_A,
+        AMOUNT_B,
+        TOKEN_A_DECIMALS,
+        TOKEN_B_DECIMALS
+    } = CHAIN_CONFIGS[chainId];
+    const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
+    const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
+    const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
+    const poolFee: FeeAmount = POOL_FEE;
+    const result = await v3Amm.withdrawLiquidity(new AddLiquidityDTO(
         tokenA,
         tokenB,
         AMOUNT_A,

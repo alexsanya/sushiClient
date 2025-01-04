@@ -1,10 +1,11 @@
-import { computePoolAddress, FeeAmount, MintOptions, nearestUsableTick, NonfungiblePositionManager, Pool, Position } from "@uniswap/v3-sdk";
+import { CollectOptions, computePoolAddress, FeeAmount, MintOptions, nearestUsableTick, NonfungiblePositionManager, Pool, Position, RemoveLiquidityOptions } from "@uniswap/v3-sdk";
 import { CHAIN_CONFIGS } from "../../chains";
 import { ethers, JsonRpcProvider, TransactionRequest, Wallet } from "ethers";
 import { envs } from "../config/env";
 import { AddLiquidityDTO } from "../dtos";
-import { BigintIsh, Percent, Token } from "@uniswap/sdk-core";
+import { BigintIsh, CurrencyAmount, Percent, Token } from "@uniswap/sdk-core";
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
+import JSBI from "jsbi";
 
 const MAX_FEE_PER_GAS = 250000000000;
 const MAX_PRIORITY_FEE_PER_GAS = 250000000000;
@@ -39,6 +40,32 @@ export class AddLiquidityHelper {
         const position = this.getPosition(pool);
         const transaction = this.buildMintTransaction(this.user.address, position);
         return transaction;
+    }
+    async buildWithdrawLiquidityTransaction(tokenId: BigintIsh, liquidityPercentage: Percent): Promise<TransactionRequest> {
+        const poolContract = this.getPoolContract(); 
+        const pool = await this.getConfiguredPool(poolContract);
+        const currentPosition = this.getPosition(pool);
+        const collectOptions: Omit<CollectOptions, 'tokenId'> = {
+            expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(
+            this.tokenA,
+            0
+            ),
+            expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(
+            this.tokenB,
+            0
+            ),
+            recipient: this.user.address
+        }
+        const removeLiquidityOptions: RemoveLiquidityOptions = {
+            deadline: Math.floor(Date.now() / 1000) + 60 * 20,
+            slippageTolerance: new Percent(50, 10_000),
+            tokenId: JSBI.BigInt(tokenId.toString()),
+            // percentage of liquidity to remove
+            liquidityPercentage,
+            collectOptions,
+        }
+
+        return this.buildWithdrawTransaction(currentPosition, removeLiquidityOptions);
     }
 
     private getPosition(configuredPool: Pool): Position {
@@ -75,6 +102,21 @@ export class AddLiquidityHelper {
             to: this.nonfungiblePositionManagerAddress,
             value: value,
             from,
+            maxFeePerGas: MAX_FEE_PER_GAS,
+            maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS,
+        }
+    }
+
+    private buildWithdrawTransaction(currentPosition: Position, removeLiquidityOptions: RemoveLiquidityOptions): TransactionRequest {
+        const { calldata, value } = NonfungiblePositionManager.removeCallParameters(
+            currentPosition,
+            removeLiquidityOptions
+        )
+        return {
+            data: calldata,
+            to: this.nonfungiblePositionManagerAddress,
+            value: value,
+            from: this.user.address,
             maxFeePerGas: MAX_FEE_PER_GAS,
             maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS,
         }

@@ -6,7 +6,7 @@ import { envs } from "../config/env";
 import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import { Contract } from "web3";
 import { CHAIN_CONFIGS } from "../../chains";
-import { BigintIsh } from "@uniswap/sdk-core";
+import { BigintIsh, Percent } from "@uniswap/sdk-core";
 import { AddLiquidityHelper } from "./AddLiquidityHelper";
 
 export class V3AMMimpl implements V3AMM {
@@ -35,7 +35,13 @@ export class V3AMMimpl implements V3AMM {
         console.log({ txRes });
         return {};
     }
-    async withdrawLiquidity(withdrawLiquidityDTO: WithdrawLiquidityDTO): Promise<WithdrawLiquidityResult> {
+
+    async withdrawLiquidity(addLiquidityDTO: AddLiquidityDTO): Promise<WithdrawLiquidityResult> {
+        const addLiquidityHelper = new AddLiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
+        const tokenId = await this.nfpmContract.tokenOfOwnerByIndex(this.signer.address, 0);
+        const transaction = await addLiquidityHelper.buildWithdrawLiquidityTransaction(tokenId, new Percent(1));
+        const txRes = await this.signer.sendTransaction(transaction);
+        console.log({ txRes });
         return {};
     }
 
