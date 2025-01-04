@@ -92,7 +92,7 @@ function getMintOptions(recipient: string): MintOptions {
 
 async function supplyAndApproveTokens(provider: JsonRpcProvider, user: Wallet, amountA: BigintIsh, amountB: BigintIsh): Promise<void> {
 
-    // Impersonate the token holder
+    // Impersonate the token minter
     await provider.send('anvil_impersonateAccount', [TOKEN_A_MINTER_ADDRESS]);
     if (TOKEN_A_ADDRESS !== TOKEN_B_ADDRESS) {
         await provider.send('anvil_impersonateAccount', [TOKEN_B_MINTER_ADDRESS]);
