@@ -1,2 +1,1 @@
-export * from './addLiquitidy.dto';
-export * from './withdrawLiquidity.dto';
+export * from './liquidityDTO.dto';

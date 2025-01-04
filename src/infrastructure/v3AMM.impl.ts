@@ -1,13 +1,13 @@
 import { V3AMM } from "../../v3AMM";
 import { AddLiquidityResult, PositionInfo, WithdrawLiquidityResult } from "../datatypes";
-import { AddLiquidityDTO, WithdrawLiquidityDTO } from "../dtos";
+import { LiquidityDTO } from "../dtos";
 import { ethers, JsonRpcProvider, Wallet } from "ethers";
 import { envs } from "../config/env";
 import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import { Contract } from "web3";
 import { CHAIN_CONFIGS } from "../../chains";
 import { BigintIsh, Percent } from "@uniswap/sdk-core";
-import { AddLiquidityHelper } from "./AddLiquidityHelper";
+import { LiquidityHelper } from "./LiquidityHelper";
 
 export class V3AMMimpl implements V3AMM {
     private chainId: string;
@@ -28,16 +28,16 @@ export class V3AMMimpl implements V3AMM {
         );
     }
 
-    async addLiquidity(addLiquidityDTO: AddLiquidityDTO): Promise<AddLiquidityResult> {
-        const addLiquidityHelper = new AddLiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
+    async addLiquidity(addLiquidityDTO: LiquidityDTO): Promise<AddLiquidityResult> {
+        const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
         const transaction = await addLiquidityHelper.buildAddLiquidityTransaction();
         const txRes = await this.signer.sendTransaction(transaction);
         console.log({ txRes });
         return {};
     }
 
-    async withdrawLiquidity(addLiquidityDTO: AddLiquidityDTO): Promise<WithdrawLiquidityResult> {
-        const addLiquidityHelper = new AddLiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
+    async withdrawLiquidity(withdrawLiquidityDTO: LiquidityDTO): Promise<WithdrawLiquidityResult> {
+        const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, withdrawLiquidityDTO);
         const tokenId = await this.nfpmContract.tokenOfOwnerByIndex(this.signer.address, 0);
         const transaction = await addLiquidityHelper.buildWithdrawLiquidityTransaction(tokenId, new Percent(1));
         const txRes = await this.signer.sendTransaction(transaction);

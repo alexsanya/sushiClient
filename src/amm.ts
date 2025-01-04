@@ -1,7 +1,7 @@
 import { Token } from "@uniswap/sdk-core";
 import { CHAIN_ID } from "../chains/sepolia";
 import { envs } from "./config/env";
-import { AddLiquidityDTO } from "./dtos";
+import { LiquidityDTO } from "./dtos";
 import { V3AMMimpl } from "./infrastructure/v3AMM.impl";
 import { setUpFork } from "./operations/setUpFork";
 import { CHAIN_CONFIGS } from "../chains";
@@ -65,7 +65,7 @@ async function addLiquidity() {
     const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
     const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
     const poolFee: FeeAmount = POOL_FEE;
-    const result = await v3Amm.addLiquidity(new AddLiquidityDTO(
+    const result = await v3Amm.addLiquidity(new LiquidityDTO(
         tokenA,
         tokenB,
         AMOUNT_A,
@@ -90,7 +90,7 @@ async function withdrawLiquidity() {
     const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
     const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
     const poolFee: FeeAmount = POOL_FEE;
-    const result = await v3Amm.withdrawLiquidity(new AddLiquidityDTO(
+    const result = await v3Amm.withdrawLiquidity(new LiquidityDTO(
         tokenA,
         tokenB,
         AMOUNT_A,

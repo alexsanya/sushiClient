@@ -2,7 +2,7 @@ import { CollectOptions, computePoolAddress, FeeAmount, MintOptions, nearestUsab
 import { CHAIN_CONFIGS } from "../../chains";
 import { ethers, JsonRpcProvider, TransactionRequest, Wallet } from "ethers";
 import { envs } from "../config/env";
-import { AddLiquidityDTO } from "../dtos";
+import { LiquidityDTO } from "../dtos";
 import { BigintIsh, CurrencyAmount, Percent, Token } from "@uniswap/sdk-core";
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import JSBI from "jsbi";
@@ -10,7 +10,7 @@ import JSBI from "jsbi";
 const MAX_FEE_PER_GAS = 250000000000;
 const MAX_PRIORITY_FEE_PER_GAS = 250000000000;
 
-export class AddLiquidityHelper {
+export class LiquidityHelper {
     private user: Wallet;
     private tokenA: Token;
     private tokenB: Token;
@@ -21,13 +21,13 @@ export class AddLiquidityHelper {
     private poolFactoryContractAddress: string;
     private nonfungiblePositionManagerAddress: string;
 
-    constructor(chainId: string, user: Wallet, addLiquidityDTO: AddLiquidityDTO) {
+    constructor(chainId: string, user: Wallet, liquidityDTO: LiquidityDTO) {
         this.user = user;
-        this.tokenA = addLiquidityDTO.tokenA;
-        this.tokenB = addLiquidityDTO.tokenB;
-        this.amountA = addLiquidityDTO.amountA;
-        this.amountB = addLiquidityDTO.amountB;
-        this.poolFee = addLiquidityDTO.poolFee;
+        this.tokenA = liquidityDTO.tokenA;
+        this.tokenB = liquidityDTO.tokenB;
+        this.amountA = liquidityDTO.amountA;
+        this.amountB = liquidityDTO.amountB;
+        this.poolFee = liquidityDTO.poolFee;
         this.provider = new JsonRpcProvider(envs.PROVIDER_RPC);
         this.poolFactoryContractAddress = CHAIN_CONFIGS[chainId].POOL_FACTORY_CONTRACT_ADDRESS;
         this.nonfungiblePositionManagerAddress = CHAIN_CONFIGS[chainId].NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS;
