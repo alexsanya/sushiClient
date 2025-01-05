@@ -1,0 +1,7 @@
+.yarn
+main.ts
+node_modules/
+dist/
+coverage/
+src/scripts
+jest.config.ts
