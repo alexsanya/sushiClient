@@ -42,10 +42,27 @@ export class V3AMMimpl implements V3AMM {
 		if (typeof envs.POSITION_INDEX !== 'number') {
 			throw new Error('Position index should be provided');
 		}
-		const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, withdrawLiquidityDTO);
 		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(this.signer.address, envs.POSITION_INDEX);
-		const transaction = await addLiquidityHelper.buildWithdrawLiquidityTransaction(tokenId, new Percent(ONE));
-		const txRes = await this.signer.sendTransaction(transaction);
+		const { liquidity } = await this.nfpmContract.positions(tokenId);
+
+		const deadline = Math.floor(Date.now() / 1000) + 3600 * 20;
+		console.log({
+			tokenId, liquidity, deadline
+		});
+
+		const txRes = await (this.nfpmContract.connect(this.signer) as Contract).decreaseLiquidity({
+			tokenId,
+			liquidity,
+			amount0Min: 0,
+			amount1Min: 0,
+			deadline
+		});
+
+
+
+
+
+
 		console.log({ txRes });
 		return { txRes };
 	}
