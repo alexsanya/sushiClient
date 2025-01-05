@@ -14,9 +14,18 @@ import { CHAIN_CONFIGS } from '../../chains';
 import { type Contract, ethers, JsonRpcProvider, type TransactionRequest, type Wallet } from 'ethers';
 import { envs } from '../config/env';
 import { type LiquidityDTO } from '../dtos';
-import { type BigintIsh, CurrencyAmount, Percent, type Token } from '@uniswap/sdk-core';
+import { type BigintIsh, CurrencyAmount, type Percent, type Token } from '@uniswap/sdk-core';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import JSBI from 'jsbi';
+import {
+	ONE,
+	ONE_THOUSAND,
+	RANGE_COEFFICIENT,
+	SECONDS_AGO_OBSERVATION,
+	SECONDS_IN_HOUR,
+	SLIPPAGE_TOLERANCE,
+	ZERO
+} from '../constants';
 
 const MAX_FEE_PER_GAS = 250000000000;
 const MAX_PRIORITY_FEE_PER_GAS = 250000000000;
@@ -39,6 +48,9 @@ export class LiquidityHelper {
 		this.amountA = liquidityDTO.amountA;
 		this.amountB = liquidityDTO.amountB;
 		this.poolFee = liquidityDTO.poolFee;
+		if (typeof envs.PROVIDER_RPC !== 'string') {
+			throw new Error('PROVIDER_RPC is not provided');
+		}
 		this.provider = new JsonRpcProvider(envs.PROVIDER_RPC);
 		this.poolFactoryContractAddress = CHAIN_CONFIGS[chainId].POOL_FACTORY_CONTRACT_ADDRESS;
 		this.nonfungiblePositionManagerAddress = CHAIN_CONFIGS[chainId].NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS;
@@ -46,11 +58,11 @@ export class LiquidityHelper {
 
 	async getTWAP(): Promise<string> {
 		const poolContract = this.getPoolContract();
-		const secondsBetween = BigInt(10);
+		const secondsBetween = BigInt(SECONDS_AGO_OBSERVATION);
 		try {
-			const observations = await poolContract.observe([secondsBetween, 0]);
-			// #TODO refactor
-			const diffTickCumulative = observations[0][0] - observations[0][1];
+			const observations = await poolContract.observe([secondsBetween, ZERO]);
+			const { tickCumulatives } = observations;
+			const diffTickCumulative = tickCumulatives[ZERO] - tickCumulatives[ONE];
 			const averageTick = BigInt(diffTickCumulative) / secondsBetween;
 			return tickToPrice(this.tokenA, this.tokenB, Number(averageTick)).toFixed();
 		} catch (error) {
@@ -75,13 +87,13 @@ export class LiquidityHelper {
 		const pool = await this.getConfiguredPool(poolContract);
 		const currentPosition = this.getPosition(pool);
 		const collectOptions: Omit<CollectOptions, 'tokenId'> = {
-			expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(this.tokenA, 0),
-			expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(this.tokenB, 0),
+			expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(this.tokenA, ZERO),
+			expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(this.tokenB, ZERO),
 			recipient: this.user.address
 		};
 		const removeLiquidityOptions: RemoveLiquidityOptions = {
-			deadline: Math.floor(Date.now() / 1000) + 60 * 20,
-			slippageTolerance: new Percent(50, 10_000),
+			deadline: Math.floor(Date.now() / ONE_THOUSAND) + SECONDS_IN_HOUR,
+			slippageTolerance: SLIPPAGE_TOLERANCE,
 			tokenId: JSBI.BigInt(tokenId.toString()),
 			// percentage of liquidity to remove
 			liquidityPercentage,
@@ -95,9 +107,11 @@ export class LiquidityHelper {
 		return Position.fromAmounts({
 			pool: configuredPool,
 			tickLower:
-				nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) - configuredPool.tickSpacing * 2,
+				nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) -
+				configuredPool.tickSpacing * RANGE_COEFFICIENT,
 			tickUpper:
-				nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) + configuredPool.tickSpacing * 2,
+				nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) +
+				configuredPool.tickSpacing * RANGE_COEFFICIENT,
 			amount0: this.amountA,
 			amount1: this.amountB,
 			useFullPrecision: true
@@ -107,8 +121,8 @@ export class LiquidityHelper {
 	private getMintOptions(recipient: string): MintOptions {
 		return {
 			recipient,
-			deadline: Math.floor(Date.now() / 1000) + 60 * 20,
-			slippageTolerance: new Percent(50, 10_000)
+			deadline: Math.floor(Date.now() / ONE_THOUSAND) + SECONDS_IN_HOUR,
+			slippageTolerance: SLIPPAGE_TOLERANCE
 		};
 	}
 
@@ -162,8 +176,8 @@ export class LiquidityHelper {
 			this.tokenA,
 			this.tokenB,
 			this.poolFee,
-			slot0.sqrtPriceX96.toString(),
-			liquidity.toString(),
+			slot0.sqrtPriceX96.toString() as string,
+			liquidity.toString() as string,
 			Number(slot0.tick)
 		);
 	}

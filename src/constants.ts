@@ -1,3 +1,11 @@
 /* eslint-disable @typescript-eslint/no-magic-numbers */
 
+import { Percent } from '@uniswap/sdk-core';
+
+export const ZERO = 0 as const;
 export const ONE = 1 as const;
+export const RANGE_COEFFICIENT = 2 as const;
+export const SLIPPAGE_TOLERANCE = new Percent(50, 10_000);
+export const ONE_THOUSAND = 1000 as const;
+export const SECONDS_IN_HOUR = 3600 as const;
+export const SECONDS_AGO_OBSERVATION = 10 as const;

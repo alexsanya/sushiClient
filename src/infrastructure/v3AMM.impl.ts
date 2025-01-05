@@ -5,12 +5,12 @@ import { Contract, ethers, JsonRpcProvider, Wallet } from 'ethers';
 import { envs } from '../config/env';
 import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import { CHAIN_CONFIGS } from '../../chains';
-import { type BigintIsh, Percent, Token } from '@uniswap/sdk-core';
+import { type BigintIsh, Token } from '@uniswap/sdk-core';
 import { LiquidityHelper } from './LiquidityHelper';
 import { type FeeAmount } from '@uniswap/v3-sdk';
 import type JSBI from 'jsbi';
 import { ERC20_ABI } from '../../abis/erc20';
-import { ONE } from '../constants';
+import { ONE_THOUSAND, SECONDS_IN_HOUR } from '../constants';
 
 export class V3AMMimpl implements V3AMM {
 	private readonly chainId: string;
@@ -45,10 +45,7 @@ export class V3AMMimpl implements V3AMM {
 		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(this.signer.address, envs.POSITION_INDEX);
 		const { liquidity } = await this.nfpmContract.positions(tokenId);
 
-		const deadline = Math.floor(Date.now() / 1000) + 3600 * 20;
-		console.log({
-			tokenId, liquidity, deadline
-		});
+		const deadline = Math.floor(Date.now() / ONE_THOUSAND) + SECONDS_IN_HOUR;
 
 		const txRes = await (this.nfpmContract.connect(this.signer) as Contract).decreaseLiquidity({
 			tokenId,
@@ -57,11 +54,6 @@ export class V3AMMimpl implements V3AMM {
 			amount1Min: 0,
 			deadline
 		});
-
-
-
-
-
 
 		console.log({ txRes });
 		return { txRes };
