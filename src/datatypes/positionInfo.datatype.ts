@@ -7,5 +7,6 @@ export interface PositionInfo {
     feeGrowthInside0LastX128: JSBI
     feeGrowthInside1LastX128: JSBI
     tokensOwed0: JSBI
-    tokensOwed1: JSBI
+    tokensOwed1: JSBI,
+    TWAP: string
 }

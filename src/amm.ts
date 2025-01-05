@@ -21,7 +21,7 @@ import { FeeAmount } from "@uniswap/v3-sdk";
     switch (envs.COMMAND) {
         case 'positions':
             console.log('Active positions:');
-            await options();
+            await positions();
             break;
         case 'addLiquidity':
             console.log('Adding liquidity: ');
@@ -42,7 +42,7 @@ import { FeeAmount } from "@uniswap/v3-sdk";
 
 })()
 
-async function options() {
+async function positions() {
     const v3Amm = new V3AMMimpl((envs as Record<string, string>).CHAIN_ID, envs.USER_PRIVATE_KEY as string);
     const positions = await v3Amm.positions();
     console.log(positions);

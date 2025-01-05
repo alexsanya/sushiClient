@@ -1,9 +1,9 @@
-import { CollectOptions, computePoolAddress, FeeAmount, MintOptions, nearestUsableTick, NonfungiblePositionManager, Pool, Position, RemoveLiquidityOptions } from "@uniswap/v3-sdk";
+import { CollectOptions, computePoolAddress, FeeAmount, MintOptions, nearestUsableTick, NonfungiblePositionManager, Pool, Position, RemoveLiquidityOptions, tickToPrice } from "@uniswap/v3-sdk";
 import { CHAIN_CONFIGS } from "../../chains";
 import { ethers, JsonRpcProvider, TransactionRequest, Wallet } from "ethers";
 import { envs } from "../config/env";
 import { LiquidityDTO } from "../dtos";
-import { BigintIsh, CurrencyAmount, Percent, Token } from "@uniswap/sdk-core";
+import { BigintIsh, CurrencyAmount, Percent, Price, Token } from "@uniswap/sdk-core";
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import JSBI from "jsbi";
 
@@ -31,6 +31,15 @@ export class LiquidityHelper {
         this.provider = new JsonRpcProvider(envs.PROVIDER_RPC);
         this.poolFactoryContractAddress = CHAIN_CONFIGS[chainId].POOL_FACTORY_CONTRACT_ADDRESS;
         this.nonfungiblePositionManagerAddress = CHAIN_CONFIGS[chainId].NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS;
+    }
+
+    async getTWAP(): Promise<Price<Token, Token>> {
+        const poolContract = this.getPoolContract(); 
+        const secondsBetween = BigInt(10);
+        const observations = await poolContract.observe([secondsBetween, 0]);
+        const diffTickCumulative = observations[0][0] - observations[0][1];
+        const averageTick = BigInt(diffTickCumulative) / secondsBetween;
+        return tickToPrice(this.tokenA, this.tokenB, Number(averageTick));
     }
 
     async buildAddLiquidityTransaction(): Promise<TransactionRequest> {
