@@ -1,3 +1,1 @@
-export interface AddLiquidityResult {
-
-}
+export interface AddLiquidityResult {}
