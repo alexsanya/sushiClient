@@ -4,6 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --clear --transpile-only --ignore-watch node_modules ./src/amm.ts",
+    "example": "ts-node-dev ./example.ts merge --squash -m \"This is my commit message\"",
+    "build": "rimraf ./dist && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/command-line-args": "^5.2.3",
     "typescript": "^5.7.2"
   },
   "dependencies": {

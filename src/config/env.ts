@@ -7,15 +7,12 @@ import { CHAIN_ID as BSC_CHAIN_ID } from '../../chains/bsc';
 const optionDefinitions = [
     { name: 'command', defaultOption: true },
     { name: 'privateKey', alias: 'p', type: String },
-    { name: 'rpcUrl', aliac: 'r', type: String },
+    { name: 'rpcUrl', alias: 'r', type: String },
     { name: 'chain', alias: 'c', type: String}
 ];
 
-
 const mainOptions =  commandLineArgs(optionDefinitions);
-const { command, privateKey, rpcUrl } = mainOptions;
-//#TODO fix it
-const chain: string = 'bsc';
+const { command, privateKey, rpcUrl, chain } = mainOptions;
 
 const additionalOptions: Record<string, unknown> = {};
 switch (chain) {

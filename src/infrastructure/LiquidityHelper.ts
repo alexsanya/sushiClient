@@ -1,6 +1,6 @@
 import { CollectOptions, computePoolAddress, FeeAmount, MintOptions, nearestUsableTick, NonfungiblePositionManager, Pool, Position, RemoveLiquidityOptions, tickToPrice } from "@uniswap/v3-sdk";
 import { CHAIN_CONFIGS } from "../../chains";
-import { ethers, JsonRpcProvider, TransactionRequest, Wallet } from "ethers";
+import { Contract, ethers, JsonRpcProvider, TransactionRequest, Wallet } from "ethers";
 import { envs } from "../config/env";
 import { LiquidityDTO } from "../dtos";
 import { BigintIsh, CurrencyAmount, Percent, Price, Token } from "@uniswap/sdk-core";
@@ -33,13 +33,18 @@ export class LiquidityHelper {
         this.nonfungiblePositionManagerAddress = CHAIN_CONFIGS[chainId].NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS;
     }
 
-    async getTWAP(): Promise<Price<Token, Token>> {
+    async getTWAP(): Promise<string> {
         const poolContract = this.getPoolContract(); 
         const secondsBetween = BigInt(10);
-        const observations = await poolContract.observe([secondsBetween, 0]);
-        const diffTickCumulative = observations[0][0] - observations[0][1];
-        const averageTick = BigInt(diffTickCumulative) / secondsBetween;
-        return tickToPrice(this.tokenA, this.tokenB, Number(averageTick));
+        try {
+            const observations = await poolContract.observe([secondsBetween, 0]);
+            //#TODO refactor
+            const diffTickCumulative = observations[0][0] - observations[0][1];
+            const averageTick = BigInt(diffTickCumulative) / secondsBetween;
+            return tickToPrice(this.tokenA, this.tokenB, Number(averageTick)).toFixed();
+        } catch (error) {
+            return "unknown";
+        }
     }
 
     async buildAddLiquidityTransaction(): Promise<TransactionRequest> {

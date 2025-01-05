@@ -89,10 +89,8 @@ export class V3AMMimpl implements V3AMM {
 
         const tokenA: Token = new Token(Number(this.chainId), position.token0 as string, Number(decimalsA));
         const tokenB: Token = new Token(Number(this.chainId), position.token1 as string, Number(decimalsB));
-        const poolFee: FeeAmount = position.fee;
+        const poolFee: FeeAmount = position.fee as FeeAmount;
         const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, new LiquidityDTO(tokenA, tokenB, "0", "0", poolFee));
-        const result = await addLiquidityHelper.getTWAP();
-        return result.toFixed()
-
+        return await addLiquidityHelper.getTWAP();
     }
 }

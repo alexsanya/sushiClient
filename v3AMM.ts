@@ -1,8 +1,8 @@
 import { AddLiquidityResult, PositionInfo, WithdrawLiquidityResult } from "./src/datatypes";
-import { AddLiquidityDTO, WithdrawLiquidityDTO } from "./src/dtos";
+import { LiquidityDTO } from "./src/dtos";
 
 export abstract class V3AMM {
-    abstract addLiquidity(addLiquidityDTO: AddLiquidityDTO): Promise<AddLiquidityResult>;
-    abstract withdrawLiquidity(withdrawLiquidityDTO: WithdrawLiquidityDTO): Promise<WithdrawLiquidityResult>;
+    abstract addLiquidity(addLiquidityDTO: LiquidityDTO): Promise<AddLiquidityResult>;
+    abstract withdrawLiquidity(withdrawLiquidityDTO: LiquidityDTO): Promise<WithdrawLiquidityResult>;
     abstract positions(): Promise<PositionInfo[]>;
 }
