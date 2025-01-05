@@ -7,10 +7,16 @@ import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contr
 import { CHAIN_CONFIGS } from '../../chains';
 import { type BigintIsh, Token } from '@uniswap/sdk-core';
 import { LiquidityHelper } from './LiquidityHelper';
-import { type FeeAmount } from '@uniswap/v3-sdk';
-import type JSBI from 'jsbi';
+import { Pool, type FeeAmount } from '@uniswap/v3-sdk';
+import JSBI from 'jsbi';
 import { ERC20_ABI } from '../../abis/erc20';
 import { ONE_THOUSAND, SECONDS_IN_HOUR } from '../constants';
+import { getPriceFromTick } from '../utils';
+
+interface PoolPrices {
+	TWAP: string;
+	current: string;
+}
 
 export class V3AMMimpl implements V3AMM {
 	private readonly chainId: string;
@@ -80,6 +86,7 @@ export class V3AMMimpl implements V3AMM {
 	}
 
 	private async formatPositionWithTWAP(position: Record<string, unknown>): Promise<PositionInfo> {
+		const { TWAP, current } = await this.getPrices(position);
 		return {
 			tickLower: position.tickLower as number,
 			tickUpper: position.tickUpper as number,
@@ -88,11 +95,20 @@ export class V3AMMimpl implements V3AMM {
 			feeGrowthInside1LastX128: position.feeGrowthInside1LastX128 as JSBI,
 			tokensOwed0: position.tokensOwed0 as JSBI,
 			tokensOwed1: position.tokensOwed1 as JSBI,
-			TWAP: await this.getTWAP(position)
+			TWAP,
+			currentPrice: current, 
+			priceRange: this.getPriceRange(position)
 		};
 	}
 
-	private async getTWAP(position: Record<string, unknown>): Promise<string> {
+	private getPriceRange(position: Record<string, unknown>): Array<string> {
+		return [
+			getPriceFromTick(JSBI.BigInt(Number(position.tickLower))),
+			getPriceFromTick(JSBI.BigInt(Number(position.tickUpper))),
+		];
+	}
+
+	private async getPrices(position: Record<string, unknown>): Promise<PoolPrices> {
 		const erc20A = new Contract(position.token0 as string, ERC20_ABI, this.provider);
 		const erc20B = new Contract(position.token1 as string, ERC20_ABI, this.provider);
 
@@ -106,6 +122,9 @@ export class V3AMMimpl implements V3AMM {
 			this.signer,
 			new LiquidityDTO(tokenA, tokenB, '0', '0', poolFee)
 		);
-		return await addLiquidityHelper.getTWAP();
+		return {
+			TWAP: await addLiquidityHelper.getTWAP(),
+			current: await addLiquidityHelper.getCurrentPrice()
+		}
 	}
 }

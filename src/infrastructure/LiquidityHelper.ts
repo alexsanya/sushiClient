@@ -14,7 +14,7 @@ import { CHAIN_CONFIGS } from '../../chains';
 import { type Contract, ethers, JsonRpcProvider, type TransactionRequest, type Wallet } from 'ethers';
 import { envs } from '../config/env';
 import { type LiquidityDTO } from '../dtos';
-import { type BigintIsh, CurrencyAmount, type Percent, type Token } from '@uniswap/sdk-core';
+import { type BigintIsh, CurrencyAmount, Percent, type Token } from '@uniswap/sdk-core';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import JSBI from 'jsbi';
 import {
@@ -26,6 +26,7 @@ import {
 	SLIPPAGE_TOLERANCE,
 	ZERO
 } from '../constants';
+import { getPriceFromTick } from '../utils';
 
 const MAX_FEE_PER_GAS = 250000000000;
 const MAX_PRIORITY_FEE_PER_GAS = 250000000000;
@@ -54,6 +55,13 @@ export class LiquidityHelper {
 		this.provider = new JsonRpcProvider(envs.PROVIDER_RPC);
 		this.poolFactoryContractAddress = CHAIN_CONFIGS[chainId].POOL_FACTORY_CONTRACT_ADDRESS;
 		this.nonfungiblePositionManagerAddress = CHAIN_CONFIGS[chainId].NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS;
+	}
+
+	async getCurrentPrice(): Promise<string> {
+		const poolContract = this.getPoolContract();
+		const { tick } = await poolContract.slot0();
+		const currentPrice = getPriceFromTick(tick);
+		return currentPrice;
 	}
 
 	async getTWAP(): Promise<string> {
