@@ -7,7 +7,7 @@ import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contr
 import { CHAIN_CONFIGS } from '../../chains';
 import { type BigintIsh, Token } from '@uniswap/sdk-core';
 import { LiquidityHelper } from './LiquidityHelper';
-import { Pool, type FeeAmount } from '@uniswap/v3-sdk';
+import { type FeeAmount } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
 import { ERC20_ABI } from '../../abis/erc20';
 import { ONE_THOUSAND, SECONDS_IN_HOUR } from '../constants';
@@ -96,15 +96,15 @@ export class V3AMMimpl implements V3AMM {
 			tokensOwed0: position.tokensOwed0 as JSBI,
 			tokensOwed1: position.tokensOwed1 as JSBI,
 			TWAP,
-			currentPrice: current, 
+			currentPrice: current,
 			priceRange: this.getPriceRange(position)
 		};
 	}
 
-	private getPriceRange(position: Record<string, unknown>): Array<string> {
+	private getPriceRange(position: Record<string, unknown>): string[] {
 		return [
 			getPriceFromTick(JSBI.BigInt(Number(position.tickLower))),
-			getPriceFromTick(JSBI.BigInt(Number(position.tickUpper))),
+			getPriceFromTick(JSBI.BigInt(Number(position.tickUpper)))
 		];
 	}
 
@@ -125,6 +125,6 @@ export class V3AMMimpl implements V3AMM {
 		return {
 			TWAP: await addLiquidityHelper.getTWAP(),
 			current: await addLiquidityHelper.getCurrentPrice()
-		}
+		};
 	}
 }

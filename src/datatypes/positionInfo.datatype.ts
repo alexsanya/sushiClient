@@ -10,5 +10,5 @@ export interface PositionInfo {
 	tokensOwed1: JSBI;
 	TWAP: string;
 	currentPrice: string;
-	priceRange: Array<string>;
+	priceRange: string[];
 }

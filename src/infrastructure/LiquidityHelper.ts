@@ -14,7 +14,7 @@ import { CHAIN_CONFIGS } from '../../chains';
 import { type Contract, ethers, JsonRpcProvider, type TransactionRequest, type Wallet } from 'ethers';
 import { envs } from '../config/env';
 import { type LiquidityDTO } from '../dtos';
-import { type BigintIsh, CurrencyAmount, Percent, type Token } from '@uniswap/sdk-core';
+import { type BigintIsh, CurrencyAmount, type Percent, type Token } from '@uniswap/sdk-core';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import JSBI from 'jsbi';
 import {
@@ -59,7 +59,7 @@ export class LiquidityHelper {
 
 	async getCurrentPrice(): Promise<string> {
 		const poolContract = this.getPoolContract();
-		const { tick } = await poolContract.slot0();
+		const { tick } = (await poolContract.slot0()) as { tick: JSBI };
 		const currentPrice = getPriceFromTick(tick);
 		return currentPrice;
 	}
