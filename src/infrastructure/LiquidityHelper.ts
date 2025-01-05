@@ -1,20 +1,20 @@
 import {
-	CollectOptions,
+	type CollectOptions,
 	computePoolAddress,
-	FeeAmount,
-	MintOptions,
+	type FeeAmount,
+	type MintOptions,
 	nearestUsableTick,
 	NonfungiblePositionManager,
 	Pool,
 	Position,
-	RemoveLiquidityOptions,
+	type RemoveLiquidityOptions,
 	tickToPrice
 } from '@uniswap/v3-sdk';
 import { CHAIN_CONFIGS } from '../../chains';
-import { Contract, ethers, JsonRpcProvider, TransactionRequest, Wallet } from 'ethers';
+import { type Contract, ethers, JsonRpcProvider, type TransactionRequest, type Wallet } from 'ethers';
 import { envs } from '../config/env';
-import { LiquidityDTO } from '../dtos';
-import { BigintIsh, CurrencyAmount, Percent, Price, Token } from '@uniswap/sdk-core';
+import { type LiquidityDTO } from '../dtos';
+import { type BigintIsh, CurrencyAmount, Percent, type Token } from '@uniswap/sdk-core';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import JSBI from 'jsbi';
 
@@ -22,15 +22,15 @@ const MAX_FEE_PER_GAS = 250000000000;
 const MAX_PRIORITY_FEE_PER_GAS = 250000000000;
 
 export class LiquidityHelper {
-	private user: Wallet;
-	private tokenA: Token;
-	private tokenB: Token;
-	private amountA: BigintIsh;
-	private amountB: BigintIsh;
-	private poolFee: FeeAmount;
-	private provider: JsonRpcProvider;
-	private poolFactoryContractAddress: string;
-	private nonfungiblePositionManagerAddress: string;
+	private readonly user: Wallet;
+	private readonly tokenA: Token;
+	private readonly tokenB: Token;
+	private readonly amountA: BigintIsh;
+	private readonly amountB: BigintIsh;
+	private readonly poolFee: FeeAmount;
+	private readonly provider: JsonRpcProvider;
+	private readonly poolFactoryContractAddress: string;
+	private readonly nonfungiblePositionManagerAddress: string;
 
 	constructor(chainId: string, user: Wallet, liquidityDTO: LiquidityDTO) {
 		this.user = user;
@@ -49,7 +49,7 @@ export class LiquidityHelper {
 		const secondsBetween = BigInt(10);
 		try {
 			const observations = await poolContract.observe([secondsBetween, 0]);
-			//#TODO refactor
+			// #TODO refactor
 			const diffTickCumulative = observations[0][0] - observations[0][1];
 			const averageTick = BigInt(diffTickCumulative) / secondsBetween;
 			return tickToPrice(this.tokenA, this.tokenB, Number(averageTick)).toFixed();
@@ -66,6 +66,7 @@ export class LiquidityHelper {
 		const transaction = this.buildMintTransaction(this.user.address, position);
 		return transaction;
 	}
+
 	async buildWithdrawLiquidityTransaction(
 		tokenId: BigintIsh,
 		liquidityPercentage: Percent
@@ -117,7 +118,7 @@ export class LiquidityHelper {
 		return {
 			data: calldata,
 			to: this.nonfungiblePositionManagerAddress,
-			value: value,
+			value,
 			from,
 			maxFeePerGas: MAX_FEE_PER_GAS,
 			maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS
@@ -135,7 +136,7 @@ export class LiquidityHelper {
 		return {
 			data: calldata,
 			to: this.nonfungiblePositionManagerAddress,
-			value: value,
+			value,
 			from: this.user.address,
 			maxFeePerGas: MAX_FEE_PER_GAS,
 			maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS

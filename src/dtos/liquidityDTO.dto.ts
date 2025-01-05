@@ -1,5 +1,5 @@
-import { BigintIsh, Token } from '@uniswap/sdk-core';
-import { FeeAmount } from '@uniswap/v3-sdk';
+import { type BigintIsh, type Token } from '@uniswap/sdk-core';
+import { type FeeAmount } from '@uniswap/v3-sdk';
 
 export class LiquidityDTO {
 	constructor(

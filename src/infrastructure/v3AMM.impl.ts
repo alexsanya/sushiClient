@@ -1,26 +1,26 @@
-import { V3AMM } from '../../v3AMM';
-import { AddLiquidityResult, PositionInfo, WithdrawLiquidityResult } from '../datatypes';
+import { type V3AMM } from '../../v3AMM';
+import { type AddLiquidityResult, type PositionInfo, type WithdrawLiquidityResult } from '../datatypes';
 import { LiquidityDTO } from '../dtos';
 import { Contract, ethers, JsonRpcProvider, Wallet } from 'ethers';
 import { envs } from '../config/env';
 import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import { CHAIN_CONFIGS } from '../../chains';
-import { BigintIsh, Percent, Token } from '@uniswap/sdk-core';
+import { type BigintIsh, Percent, Token } from '@uniswap/sdk-core';
 import { LiquidityHelper } from './LiquidityHelper';
-import { FeeAmount } from '@uniswap/v3-sdk';
-import JSBI from 'jsbi';
+import { type FeeAmount } from '@uniswap/v3-sdk';
+import type JSBI from 'jsbi';
 import { ERC20_ABI } from '../../abis/erc20';
+import { ONE } from '../constants';
 
 export class V3AMMimpl implements V3AMM {
-	private chainId: string;
-	private signer: Wallet;
-	private provider: JsonRpcProvider;
-	//@ts-ignore
-	private nfpmContract: Contract;
+	private readonly chainId: string;
+	private readonly signer: Wallet;
+	private readonly provider: JsonRpcProvider;
+	private readonly nfpmContract: Contract;
 
 	constructor(chainId: string, userPrivateKey: string) {
 		this.chainId = chainId;
-		this.provider = new JsonRpcProvider(envs.PROVIDER_RPC);
+		this.provider = new JsonRpcProvider(envs.PROVIDER_RPC as string);
 		this.signer = new Wallet(userPrivateKey, this.provider);
 
 		this.nfpmContract = new ethers.Contract(
@@ -35,16 +35,19 @@ export class V3AMMimpl implements V3AMM {
 		const transaction = await addLiquidityHelper.buildAddLiquidityTransaction();
 		const txRes = await this.signer.sendTransaction(transaction);
 		console.log({ txRes });
-		return {};
+		return { txRes };
 	}
 
 	async withdrawLiquidity(withdrawLiquidityDTO: LiquidityDTO): Promise<WithdrawLiquidityResult> {
+		if (typeof envs.POSITION_INDEX !== 'number') {
+			throw new Error('Position index should be provided');
+		}
 		const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, withdrawLiquidityDTO);
-		const tokenId = await this.nfpmContract.tokenOfOwnerByIndex(this.signer.address, 0);
-		const transaction = await addLiquidityHelper.buildWithdrawLiquidityTransaction(tokenId, new Percent(1));
+		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(this.signer.address, envs.POSITION_INDEX);
+		const transaction = await addLiquidityHelper.buildWithdrawLiquidityTransaction(tokenId, new Percent(ONE));
 		const txRes = await this.signer.sendTransaction(transaction);
 		console.log({ txRes });
-		return {};
+		return { txRes };
 	}
 
 	async positions(): Promise<PositionInfo[]> {
@@ -52,16 +55,16 @@ export class V3AMMimpl implements V3AMM {
 		console.log(`Signer address: ${address}`);
 		const positionsTotal = await this.nfpmContract.balanceOf(address);
 		console.log({ positionsTotal });
-		const pendingPositions = Array.from({ length: Number(positionsTotal) }).map((_, i) =>
-			this.nfpmContract.tokenOfOwnerByIndex(address, i)
+		const pendingPositions = Array.from({ length: Number(positionsTotal) }).map(
+			async (_, i) => await this.nfpmContract.tokenOfOwnerByIndex(address, i)
 		);
 		const tokenIds = await Promise.all(pendingPositions);
 		console.log(tokenIds);
-		const pendingPositionsData = tokenIds.map((tokenId: BigintIsh) => this.nfpmContract.positions(tokenId));
+		const pendingPositionsData = tokenIds.map(async (tokenId: BigintIsh) => await this.nfpmContract.positions(tokenId));
 		const positionsRawData = await Promise.all(pendingPositionsData);
 
-		const pendingPositionsWithTWAP = positionsRawData.map((position: Record<string, unknown>) =>
-			this.formatPositionWithTWAP(position)
+		const pendingPositionsWithTWAP = positionsRawData.map(
+			async (position: Record<string, unknown>) => await this.formatPositionWithTWAP(position)
 		);
 
 		return await Promise.all(pendingPositionsWithTWAP);

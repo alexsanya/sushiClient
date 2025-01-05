@@ -3,7 +3,13 @@ import { envs } from '../config/env';
 import { CHAIN_CONFIGS } from '../../chains';
 import { ERC20_ABI } from '../../abis/erc20';
 
-export async function setUpFork(chainId: string) {
+export async function setUpFork(chainId: string): Promise<void> {
+	if (typeof envs.PROVIDER_RPC !== 'string') {
+		throw new Error('PROVIDER_RPC is not provided');
+	}
+	if (typeof envs.USER_PRIVATE_KEY !== 'string') {
+		throw new Error('USER_PRIVATE_KEY is not provided');
+	}
 	const provider = new JsonRpcProvider(envs.PROVIDER_RPC);
 
 	const {
@@ -27,7 +33,7 @@ export async function setUpFork(chainId: string) {
 	const minterB = await provider.getSigner(TOKEN_B_MINTER_ADDRESS);
 
 	// Connect signed with the contract
-	const erc20Acontract = new Contract(TOKEN_A_ADDRESS as string, ERC20_ABI, minterA);
+	const erc20Acontract = new Contract(TOKEN_A_ADDRESS, ERC20_ABI, minterA);
 	const erc20Bcontract = new Contract(TOKEN_B_ADDRESS, ERC20_ABI, minterB);
 	const user = new Wallet(envs.USER_PRIVATE_KEY, provider);
 	const { address } = user;
@@ -45,14 +51,14 @@ export async function setUpFork(chainId: string) {
 	const txTransferB = await erc20Bcontract.transfer(address, AMOUNT_B);
 	await txTransferB.wait();
 
-	const [balanceAafter, balanceBafter] = await Promise.all([
+	const [balanceAafter, balanceBafter]: bigint[] = await Promise.all([
 		erc20Acontract.balanceOf(address),
 		erc20Bcontract.balanceOf(address)
 	]);
 	console.debug({ balanceAbefore, balanceAafter });
 	console.debug({ balanceBbefore, balanceBafter });
 
-	//approvals
+	// approvals
 	const txApproveA = await (erc20Acontract.connect(user) as Contract).approve(
 		NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
 		balanceAafter

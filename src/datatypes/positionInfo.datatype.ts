@@ -1,4 +1,4 @@
-import JSBI from 'jsbi';
+import type JSBI from 'jsbi';
 
 export interface PositionInfo {
 	tickLower: number;

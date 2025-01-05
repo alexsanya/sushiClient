@@ -1,4 +1,4 @@
-import { BigintIsh } from '@uniswap/sdk-core';
+import { type BigintIsh } from '@uniswap/sdk-core';
 
 export const CHAIN_ID: string = '56';
 export const POOL_FACTORY_CONTRACT_ADDRESS: string = '0x126555dd55a39328F69400d6aE4F782Bd4C34ABb';

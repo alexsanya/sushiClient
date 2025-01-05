@@ -6,13 +6,14 @@ import { CHAIN_ID as BSC_CHAIN_ID } from '../../chains/bsc';
 
 const optionDefinitions = [
 	{ name: 'command', defaultOption: true },
+	{ name: 'positionIndex', alias: 'i', type: Number },
 	{ name: 'privateKey', alias: 'p', type: String },
 	{ name: 'rpcUrl', alias: 'r', type: String },
 	{ name: 'chain', alias: 'c', type: String }
 ];
 
 const mainOptions = commandLineArgs(optionDefinitions);
-const { command, privateKey, rpcUrl, chain } = mainOptions;
+const { command, privateKey, rpcUrl, chain, positionIndex } = mainOptions;
 
 const additionalOptions: Record<string, unknown> = {};
 switch (chain) {
@@ -29,6 +30,7 @@ switch (chain) {
 
 export const envs = {
 	COMMAND: command,
+	POSITION_INDEX: positionIndex,
 	PROVIDER_RPC: rpcUrl || get('PROVIDER_RPC').asString(),
 	USER_PRIVATE_KEY: privateKey || get('USER_PRIVATE_KEY').asString(),
 	...additionalOptions
