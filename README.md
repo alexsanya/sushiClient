@@ -4,7 +4,7 @@
 Console client for SushiSwap V3 liquidity protocol
 
 ## Screencast
-[ to be added]
+https://youtu.be/eYYSB2f__gc
 
 ## Requirements
  To launch project you need to set following environment variables:
