@@ -56,9 +56,6 @@ export class V3AMMimpl implements V3AMM {
 	}
 
 	private async getWithdrawLiquidityCalldata(tokenId: BigintIsh): Promise<string> {
-		if (typeof envs.POSITION_INDEX !== 'number') {
-			throw new Error('Position index should be provided');
-		}
 		const { liquidity } = await this.nfpmContract.positions(tokenId);
 
 		const deadline = Math.floor(Date.now() / ONE_THOUSAND) + SECONDS_IN_HOUR;
@@ -73,10 +70,10 @@ export class V3AMMimpl implements V3AMM {
 		return this.nfpmContract.interface.encodeFunctionData('decreaseLiquidity', [params]);
 	}
 
-	async withdrawLiquidity(): Promise<WithdrawLiquidityResult> {
+	async withdrawLiquidity(positionIndex: number): Promise<WithdrawLiquidityResult> {
 		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(
 			this.signer.address,
-			envs.POSITION_INDEX as number
+			positionIndex
 		);
 		const calldata = await this.getWithdrawLiquidityCalldata(tokenId);
 		const transaction = {
@@ -122,12 +119,12 @@ export class V3AMMimpl implements V3AMM {
 		return { txRes };
 	}
 
-	async reallocate(addLiquidityDTO: LiquidityDTO): Promise<ReallocateLiquidityResult> {
+	async reallocate(addLiquidityDTO: LiquidityDTO, positionIndex: number): Promise<ReallocateLiquidityResult> {
 		const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
 		const { data: addLiquidityCalldata } = await addLiquidityHelper.buildAddLiquidityTransaction(RANGE_COEFFICIENT_NEW);
 		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(
 			this.signer.address,
-			envs.POSITION_INDEX as number
+			positionIndex
 		);
 		const withdrawLiquidityCalldata = await this.getWithdrawLiquidityCalldata(tokenId);
 		const { data: collectAllFeesCalldata } = await this.getCollectAllFeesTransaction(tokenId);
@@ -157,7 +154,6 @@ export class V3AMMimpl implements V3AMM {
 			async (_, i) => await this.nfpmContract.tokenOfOwnerByIndex(address, i)
 		);
 		const tokenIds: JSBI[] = await Promise.all(pendingPositions);
-		console.log(tokenIds);
 		const pendingPositionsData = tokenIds.map(async (tokenId: BigintIsh) => await this.nfpmContract.positions(tokenId));
 		const positionsRawData = await Promise.all(pendingPositionsData);
 
