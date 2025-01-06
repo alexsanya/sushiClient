@@ -27,7 +27,7 @@ switch (chain) {
 		break;
 	default:
 		additionalOptions.CHAIN_ID = SEPOLIA_CHAIN_ID;
-		//throw new Error(`Unknown chain ${chain}`);
+	// throw new Error(`Unknown chain ${chain}`);
 }
 
 export const envs = {

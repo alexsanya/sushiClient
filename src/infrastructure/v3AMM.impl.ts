@@ -71,10 +71,7 @@ export class V3AMMimpl implements V3AMM {
 	}
 
 	async withdrawLiquidity(positionIndex: number): Promise<WithdrawLiquidityResult> {
-		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(
-			this.signer.address,
-			positionIndex
-		);
+		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(this.signer.address, positionIndex);
 		const calldata = await this.getWithdrawLiquidityCalldata(tokenId);
 		const transaction = {
 			data: calldata,
@@ -95,8 +92,14 @@ export class V3AMMimpl implements V3AMM {
 		const [token0, token1] = await this.getTokensByAddresses(position.token0 as string, position.token1 as string);
 		const collectOptions: CollectOptions = {
 			tokenId: JSBI.BigInt(tokenId.toString()),
-			expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(position.tokensOwed0.toString())),
-			expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(token1, JSBI.BigInt(position.tokensOwed1.toString())),
+			expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(
+				token0,
+				JSBI.BigInt(position.tokensOwed0.toString() as string)
+			),
+			expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(
+				token1,
+				JSBI.BigInt(position.tokensOwed1.toString() as string)
+			),
 			recipient: this.signer.address
 		};
 		const { calldata, value } = NonfungiblePositionManager.collectCallParameters(collectOptions);
@@ -122,10 +125,7 @@ export class V3AMMimpl implements V3AMM {
 	async reallocate(addLiquidityDTO: LiquidityDTO, positionIndex: number): Promise<ReallocateLiquidityResult> {
 		const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
 		const { data: addLiquidityCalldata } = await addLiquidityHelper.buildAddLiquidityTransaction(RANGE_COEFFICIENT_NEW);
-		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(
-			this.signer.address,
-			positionIndex
-		);
+		const tokenId: BigintIsh = await this.nfpmContract.tokenOfOwnerByIndex(this.signer.address, positionIndex);
 		const withdrawLiquidityCalldata = await this.getWithdrawLiquidityCalldata(tokenId);
 		const { data: collectAllFeesCalldata } = await this.getCollectAllFeesTransaction(tokenId);
 		const erc20A = new Contract(addLiquidityDTO.tokenA.address, ERC20_ABI, this.signer);

@@ -30,15 +30,15 @@ async function main(): Promise<void> {
 			break;
 		case 'reallocate':
 			console.log('Reallocating liquidity to new price range: ');
-			await reallocate(envs.POSITION_INDEX);
+			await reallocate(envs.POSITION_INDEX as number);
 			break;
 		case 'withdrawLiquidity':
 			console.log('Withdrawing liquidity: ');
-			await withdrawLiquidity(envs.POSITION_INDEX);
+			await withdrawLiquidity(envs.POSITION_INDEX as number);
 			break;
 		case 'collectAllFees':
 			console.log('Collectiong fees');
-			await collectAllFees(envs.TOKEN_ID);
+			await collectAllFees(envs.TOKEN_ID as number);
 			break;
 		case 'setUp':
 			console.log('Preparing chain fork: ');
@@ -49,4 +49,3 @@ async function main(): Promise<void> {
 			console.log(`unknown command ${envs.COMMAND}`);
 	}
 }
-
