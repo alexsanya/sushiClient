@@ -5,9 +5,9 @@ import { Contract, ethers, JsonRpcProvider, Wallet } from 'ethers';
 import { envs } from '../config/env';
 import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import { CHAIN_CONFIGS } from '../../chains';
-import { type BigintIsh, Token } from '@uniswap/sdk-core';
+import { type BigintIsh, CurrencyAmount, Token } from '@uniswap/sdk-core';
 import { LiquidityHelper } from './LiquidityHelper';
-import { type FeeAmount } from '@uniswap/v3-sdk';
+import { CollectOptions, NonfungiblePositionManager, type FeeAmount } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
 import { ERC20_ABI } from '../../abis/erc20';
 import {
@@ -89,6 +89,36 @@ export class V3AMMimpl implements V3AMM {
 		return { txRes };
 	}
 
+	async collectAllFees(tokenId: BigintIsh) {
+		const position = await this.nfpmContract.positions(tokenId);
+		const [token0, token1] = await this.getTokensByAddresses(position.token0 as string, position.token1 as string);
+		const collectOptions: CollectOptions = {
+			tokenId,
+			expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(
+			  token0,
+			  JSBI.BigInt(position.tokensOwed0.toString())
+			),
+			expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(
+			  token1,
+			  JSBI.BigInt(position.tokensOwed1.toString())
+			),
+			recipient: this.signer.address
+		}
+		console.log({collectOptions});
+		const { calldata, value } = NonfungiblePositionManager.collectCallParameters(collectOptions);
+		const transaction = {
+			data: calldata,
+			to: this.nonfungiblePositionManagerAddress,
+			value: value,
+			from: this.signer.address,
+			maxFeePerGas: MAX_FEE_PER_GAS,
+			maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS,
+		  }
+		const txRes = await this.signer.sendTransaction(transaction);
+		console.log({ txRes });
+		return { txRes };
+	}
+
 	async reallocate(addLiquidityDTO: LiquidityDTO): Promise<ReallocateLiquidityResult> {
 		const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
 		const { data: addLiquidityCalldata } = await addLiquidityHelper.buildAddLiquidityTransaction(RANGE_COEFFICIENT_NEW);
@@ -135,6 +165,8 @@ export class V3AMMimpl implements V3AMM {
 			tickLower: position.tickLower as number,
 			tickUpper: position.tickUpper as number,
 			liquidity: position.liquidity as JSBI,
+			token0: position.token0 as string,
+			token1: position.token1 as string,
 			feeGrowthInside0LastX128: position.feeGrowthInside0LastX128 as JSBI,
 			feeGrowthInside1LastX128: position.feeGrowthInside1LastX128 as JSBI,
 			tokensOwed0: position.tokensOwed0 as JSBI,
@@ -152,14 +184,22 @@ export class V3AMMimpl implements V3AMM {
 		];
 	}
 
-	private async getPrices(position: Record<string, unknown>): Promise<PoolPrices> {
-		const erc20A = new Contract(position.token0 as string, ERC20_ABI, this.provider);
-		const erc20B = new Contract(position.token1 as string, ERC20_ABI, this.provider);
+	private async getTokensByAddresses(tokenA: string, tokenB: string): Promise<Array<Token>> {
+
+		const erc20A = new Contract(tokenA as string, ERC20_ABI, this.provider);
+		const erc20B = new Contract(tokenB as string, ERC20_ABI, this.provider);
 
 		const [decimalsA, decimalsB] = await Promise.all([erc20A.decimals(), erc20B.decimals()]);
 
-		const tokenA: Token = new Token(Number(this.chainId), position.token0 as string, Number(decimalsA));
-		const tokenB: Token = new Token(Number(this.chainId), position.token1 as string, Number(decimalsB));
+		return [
+			new Token(Number(this.chainId), tokenA as string, Number(decimalsA)),
+			new Token(Number(this.chainId), tokenB as string, Number(decimalsB))
+		]
+	}
+
+	private async getPrices(position: Record<string, unknown>): Promise<PoolPrices> {
+		const { token0, token1 } = position;
+		const [tokenA, tokenB] = await this.getTokensByAddresses(token0 as string, token1 as string);
 		const poolFee: FeeAmount = position.fee as FeeAmount;
 		const addLiquidityHelper = new LiquidityHelper(
 			this.chainId,

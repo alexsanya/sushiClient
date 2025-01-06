@@ -3,6 +3,8 @@ import type JSBI from 'jsbi';
 export interface PositionInfo {
 	tickLower: number;
 	tickUpper: number;
+	token0: string;
+	token1: string;
 	liquidity: JSBI;
 	feeGrowthInside0LastX128: JSBI;
 	feeGrowthInside1LastX128: JSBI;

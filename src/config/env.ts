@@ -9,11 +9,12 @@ const optionDefinitions = [
 	{ name: 'positionIndex', alias: 'i', type: Number },
 	{ name: 'privateKey', alias: 'p', type: String },
 	{ name: 'rpcUrl', alias: 'r', type: String },
-	{ name: 'chain', alias: 'c', type: String }
+	{ name: 'chain', alias: 'c', type: String },
+	{ name: 'tokenId', alias: 't', type: Number }
 ];
 
 const mainOptions = commandLineArgs(optionDefinitions);
-const { command, privateKey, rpcUrl, chain, positionIndex } = mainOptions;
+const { command, privateKey, rpcUrl, chain, positionIndex, tokenId } = mainOptions;
 
 const additionalOptions: Record<string, unknown> = {};
 switch (chain) {
@@ -30,6 +31,7 @@ switch (chain) {
 
 export const envs = {
 	COMMAND: command,
+	TOKEN_ID: tokenId,
 	POSITION_INDEX: positionIndex,
 	PROVIDER_RPC: rpcUrl || get('PROVIDER_RPC').asString(),
 	USER_PRIVATE_KEY: privateKey || get('USER_PRIVATE_KEY').asString(),

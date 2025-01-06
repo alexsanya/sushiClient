@@ -41,6 +41,10 @@ async function main(): Promise<void> {
 			console.log('Withdrawing liquidity: ');
 			await withdrawLiquidity();
 			break;
+		case 'collectAllFees':
+			console.log('Collectiong fees');
+			await collectAllFees();
+			break;
 		case 'setUp':
 			console.log('Preparing chain fork: ');
 			await setUpFork((envs as Record<string, string>).CHAIN_ID);
@@ -55,6 +59,12 @@ async function positions(): Promise<void> {
 	const v3Amm = new V3AMMimpl((envs as Record<string, string>).CHAIN_ID, envs.USER_PRIVATE_KEY as string);
 	const positions = await v3Amm.positions();
 	console.log(positions);
+}
+
+async function collectAllFees() {
+	const v3Amm = new V3AMMimpl((envs as Record<string, string>).CHAIN_ID, envs.USER_PRIVATE_KEY as string);
+	const tokenId = envs.TOKEN_ID;
+	void (await v3Amm.collectAllFees(tokenId));
 }
 
 async function reallocate(): Promise<void> {
