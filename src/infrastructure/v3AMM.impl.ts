@@ -94,7 +94,7 @@ export class V3AMMimpl implements V3AMM {
 		const position = await this.nfpmContract.positions(tokenId);
 		const [token0, token1] = await this.getTokensByAddresses(position.token0 as string, position.token1 as string);
 		const collectOptions: CollectOptions = {
-			tokenId,
+			tokenId: JSBI.BigInt(tokenId.toString()),
 			expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(
 			  token0,
 			  JSBI.BigInt(position.tokensOwed0.toString())
