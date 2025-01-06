@@ -1,4 +1,4 @@
-import { Token } from '@uniswap/sdk-core';
+import { type BigintIsh, Token } from '@uniswap/sdk-core';
 import { envs } from './config/env';
 import { LiquidityDTO } from './dtos';
 import { V3AMMimpl } from './infrastructure/v3AMM.impl';
@@ -58,47 +58,31 @@ async function positions(): Promise<void> {
 
 async function reallocate(): Promise<void> {
 	const chainId = (envs as Record<string, string>).CHAIN_ID;
-	const {
-		CHAIN_ID,
-	} = CHAIN_CONFIGS[chainId];
+	const { CHAIN_ID, AMOUNT_A_NEW, AMOUNT_B_NEW } = CHAIN_CONFIGS[chainId];
 	const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
-	void (await v3Amm.reallocate());
+	void (await v3Amm.reallocate(getLiquidityDTO(AMOUNT_A_NEW, AMOUNT_B_NEW)));
+}
+
+function getLiquidityDTO(amountA: BigintIsh, amountB: BigintIsh): LiquidityDTO {
+	const chainId = (envs as Record<string, string>).CHAIN_ID;
+	const { CHAIN_ID, POOL_FEE, TOKEN_A_ADDRESS, TOKEN_B_ADDRESS, TOKEN_A_DECIMALS, TOKEN_B_DECIMALS } =
+		CHAIN_CONFIGS[chainId];
+	const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
+	const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
+	const poolFee: FeeAmount = POOL_FEE;
+	return new LiquidityDTO(tokenA, tokenB, amountA, amountB, poolFee);
 }
 
 async function addLiquidity(): Promise<void> {
 	const chainId = (envs as Record<string, string>).CHAIN_ID;
-	const {
-		CHAIN_ID,
-		POOL_FEE,
-		TOKEN_A_ADDRESS,
-		TOKEN_B_ADDRESS,
-		AMOUNT_A,
-		AMOUNT_B,
-		TOKEN_A_DECIMALS,
-		TOKEN_B_DECIMALS
-	} = CHAIN_CONFIGS[chainId];
+	const { CHAIN_ID, AMOUNT_A, AMOUNT_B } = CHAIN_CONFIGS[chainId];
 	const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
-	const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
-	const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
-	const poolFee: FeeAmount = POOL_FEE;
-	void (await v3Amm.addLiquidity(new LiquidityDTO(tokenA, tokenB, AMOUNT_A, AMOUNT_B, poolFee)));
+	void (await v3Amm.addLiquidity(getLiquidityDTO(AMOUNT_A, AMOUNT_B)));
 }
 
 async function withdrawLiquidity(): Promise<void> {
 	const chainId = (envs as Record<string, string>).CHAIN_ID;
-	const {
-		CHAIN_ID,
-		POOL_FEE,
-		TOKEN_A_ADDRESS,
-		TOKEN_B_ADDRESS,
-		AMOUNT_A,
-		AMOUNT_B,
-		TOKEN_A_DECIMALS,
-		TOKEN_B_DECIMALS
-	} = CHAIN_CONFIGS[chainId];
+	const { CHAIN_ID } = CHAIN_CONFIGS[chainId];
 	const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
-	const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
-	const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
-	const poolFee: FeeAmount = POOL_FEE;
 	void (await v3Amm.withdrawLiquidity());
 }

@@ -12,7 +12,7 @@ import JSBI from 'jsbi';
 import { ERC20_ABI } from '../../abis/erc20';
 import { MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS, ONE_THOUSAND, SECONDS_IN_HOUR } from '../constants';
 import { getPriceFromTick } from '../utils';
-import { ReallocateLiquidityResult } from '../datatypes/reallocateLiquidityResult.datatype';
+import { type ReallocateLiquidityResult } from '../datatypes/reallocateLiquidityResult.datatype';
 
 interface PoolPrices {
 	TWAP: string;
@@ -62,8 +62,8 @@ export class V3AMMimpl implements V3AMM {
 			amount0Min: 0,
 			amount1Min: 0,
 			deadline
-		}
-		return this.nfpmContract.interface.encodeFunctionData("decreaseLiquidity", [params]);
+		};
+		return this.nfpmContract.interface.encodeFunctionData('decreaseLiquidity', [params]);
 	}
 
 	async withdrawLiquidity(): Promise<WithdrawLiquidityResult> {
@@ -75,15 +75,31 @@ export class V3AMMimpl implements V3AMM {
 			from: this.signer.address,
 			maxFeePerGas: MAX_FEE_PER_GAS,
 			maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS
-		}
+		};
 
 		const txRes = await this.signer.sendTransaction(transaction);
 		console.log({ txRes });
 		return { txRes };
 	}
 
-	async reallocate(): Promise<ReallocateLiquidityResult> {
-		throw new Error('Not implemented');
+	async reallocate(addLiquidityDTO: LiquidityDTO): Promise<ReallocateLiquidityResult> {
+		const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
+		const { data: addLiquidityCalldata } = await addLiquidityHelper.buildAddLiquidityTransaction();
+		const withdrawLiquidityCalldata = await this.getWithdrawLiquidityCalldata();
+		const erc20A = new Contract(addLiquidityDTO.tokenA.address, ERC20_ABI, this.signer);
+		const erc20B = new Contract(addLiquidityDTO.tokenB.address, ERC20_ABI, this.signer);
+		const txApproveA = await erc20A.approve(this.nonfungiblePositionManagerAddress, addLiquidityDTO.amountA);
+		await txApproveA.wait();
+		const txApproveB = await erc20B.approve(this.nonfungiblePositionManagerAddress, addLiquidityDTO.amountB);
+
+		await txApproveB.wait();
+
+		const txRes = await (this.nfpmContract.connect(this.signer) as Contract).multicall([
+			withdrawLiquidityCalldata,
+			addLiquidityCalldata
+		]);
+		console.log({ txRes });
+		return { txRes };
 	}
 
 	async positions(): Promise<PositionInfo[]> {

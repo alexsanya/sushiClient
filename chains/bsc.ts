@@ -13,3 +13,6 @@ export const TOKEN_A_DECIMALS: number = 18;
 export const TOKEN_B_DECIMALS: number = 18;
 export const AMOUNT_A: BigintIsh = '40000';
 export const AMOUNT_B: BigintIsh = '200000';
+
+export const AMOUNT_A_NEW: BigintIsh = '40000';
+export const AMOUNT_B_NEW: BigintIsh = '200000';

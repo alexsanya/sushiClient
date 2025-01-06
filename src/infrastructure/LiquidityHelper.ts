@@ -30,7 +30,6 @@ import {
 } from '../constants';
 import { getPriceFromTick } from '../utils';
 
-
 export class LiquidityHelper {
 	private readonly user: Wallet;
 	private readonly tokenA: Token;
