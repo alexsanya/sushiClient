@@ -18,6 +18,8 @@ import { type BigintIsh, CurrencyAmount, type Percent, type Token } from '@unisw
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import JSBI from 'jsbi';
 import {
+	MAX_FEE_PER_GAS,
+	MAX_PRIORITY_FEE_PER_GAS,
 	ONE,
 	ONE_THOUSAND,
 	RANGE_COEFFICIENT,
@@ -28,8 +30,6 @@ import {
 } from '../constants';
 import { getPriceFromTick } from '../utils';
 
-const MAX_FEE_PER_GAS = 250000000000;
-const MAX_PRIORITY_FEE_PER_GAS = 250000000000;
 
 export class LiquidityHelper {
 	private readonly user: Wallet;

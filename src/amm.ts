@@ -32,6 +32,10 @@ async function main(): Promise<void> {
 			console.log('Adding liquidity: ');
 			await addLiquidity();
 			break;
+		case 'reallocate':
+			console.log('Reallocating liquidity to new price range: ');
+			await reallocate();
+			break;
 		case 'withdrawLiquidity':
 			console.log('Withdrawing liquidity: ');
 			await withdrawLiquidity();
@@ -50,6 +54,15 @@ async function positions(): Promise<void> {
 	const v3Amm = new V3AMMimpl((envs as Record<string, string>).CHAIN_ID, envs.USER_PRIVATE_KEY as string);
 	const positions = await v3Amm.positions();
 	console.log(positions);
+}
+
+async function reallocate(): Promise<void> {
+	const chainId = (envs as Record<string, string>).CHAIN_ID;
+	const {
+		CHAIN_ID,
+	} = CHAIN_CONFIGS[chainId];
+	const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
+	void (await v3Amm.reallocate());
 }
 
 async function addLiquidity(): Promise<void> {
@@ -87,5 +100,5 @@ async function withdrawLiquidity(): Promise<void> {
 	const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
 	const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
 	const poolFee: FeeAmount = POOL_FEE;
-	void (await v3Amm.withdrawLiquidity(new LiquidityDTO(tokenA, tokenB, AMOUNT_A, AMOUNT_B, poolFee)));
+	void (await v3Amm.withdrawLiquidity());
 }

@@ -10,8 +10,9 @@ import { LiquidityHelper } from './LiquidityHelper';
 import { type FeeAmount } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
 import { ERC20_ABI } from '../../abis/erc20';
-import { ONE_THOUSAND, SECONDS_IN_HOUR } from '../constants';
+import { MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS, ONE_THOUSAND, SECONDS_IN_HOUR } from '../constants';
 import { getPriceFromTick } from '../utils';
+import { ReallocateLiquidityResult } from '../datatypes/reallocateLiquidityResult.datatype';
 
 interface PoolPrices {
 	TWAP: string;
@@ -23,11 +24,13 @@ export class V3AMMimpl implements V3AMM {
 	private readonly signer: Wallet;
 	private readonly provider: JsonRpcProvider;
 	private readonly nfpmContract: Contract;
+	private readonly nonfungiblePositionManagerAddress: string;
 
 	constructor(chainId: string, userPrivateKey: string) {
 		this.chainId = chainId;
 		this.provider = new JsonRpcProvider(envs.PROVIDER_RPC as string);
 		this.signer = new Wallet(userPrivateKey, this.provider);
+		this.nonfungiblePositionManagerAddress = CHAIN_CONFIGS[chainId].NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS;
 
 		this.nfpmContract = new ethers.Contract(
 			CHAIN_CONFIGS[chainId].NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
@@ -44,7 +47,7 @@ export class V3AMMimpl implements V3AMM {
 		return { txRes };
 	}
 
-	async withdrawLiquidity(withdrawLiquidityDTO: LiquidityDTO): Promise<WithdrawLiquidityResult> {
+	private async getWithdrawLiquidityCalldata(): Promise<string> {
 		if (typeof envs.POSITION_INDEX !== 'number') {
 			throw new Error('Position index should be provided');
 		}
@@ -53,16 +56,34 @@ export class V3AMMimpl implements V3AMM {
 
 		const deadline = Math.floor(Date.now() / ONE_THOUSAND) + SECONDS_IN_HOUR;
 
-		const txRes = await (this.nfpmContract.connect(this.signer) as Contract).decreaseLiquidity({
+		const params = {
 			tokenId,
 			liquidity,
 			amount0Min: 0,
 			amount1Min: 0,
 			deadline
-		});
+		}
+		return this.nfpmContract.interface.encodeFunctionData("decreaseLiquidity", [params]);
+	}
 
+	async withdrawLiquidity(): Promise<WithdrawLiquidityResult> {
+		const calldata = await this.getWithdrawLiquidityCalldata();
+		const transaction = {
+			data: calldata,
+			to: this.nonfungiblePositionManagerAddress,
+			value: 0,
+			from: this.signer.address,
+			maxFeePerGas: MAX_FEE_PER_GAS,
+			maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS
+		}
+
+		const txRes = await this.signer.sendTransaction(transaction);
 		console.log({ txRes });
 		return { txRes };
+	}
+
+	async reallocate(): Promise<ReallocateLiquidityResult> {
+		throw new Error('Not implemented');
 	}
 
 	async positions(): Promise<PositionInfo[]> {

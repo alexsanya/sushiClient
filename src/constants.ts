@@ -2,6 +2,9 @@
 
 import { Percent } from '@uniswap/sdk-core';
 
+export const MAX_FEE_PER_GAS = 250000000000 as const;
+export const MAX_PRIORITY_FEE_PER_GAS = 250000000000 as const;
+
 export const ZERO = 0 as const;
 export const ONE = 1 as const;
 export const RANGE_COEFFICIENT = 2 as const;
