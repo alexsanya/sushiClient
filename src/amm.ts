@@ -61,10 +61,10 @@ async function positions(): Promise<void> {
 	console.log(positions);
 }
 
-async function collectAllFees() {
+async function collectAllFees(): Promise<void> {
 	const v3Amm = new V3AMMimpl((envs as Record<string, string>).CHAIN_ID, envs.USER_PRIVATE_KEY as string);
 	const tokenId = envs.TOKEN_ID;
-	void (await v3Amm.collectAllFees(tokenId));
+	void (await v3Amm.collectAllFees(tokenId as string));
 }
 
 async function reallocate(): Promise<void> {
