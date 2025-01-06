@@ -153,15 +153,16 @@ export class V3AMMimpl implements V3AMM {
 		const positionsRawData = await Promise.all(pendingPositionsData);
 
 		const pendingPositionsWithTWAP = positionsRawData.map(
-			async (position: Record<string, unknown>) => await this.formatPositionWithTWAP(position)
+			async (position: Record<string, unknown>, i: number) => await this.formatPositionWithTWAP(tokenIds[i], position)
 		);
 
 		return await Promise.all(pendingPositionsWithTWAP);
 	}
 
-	private async formatPositionWithTWAP(position: Record<string, unknown>): Promise<PositionInfo> {
+	private async formatPositionWithTWAP(tokenId: JSBI, position: Record<string, unknown>): Promise<PositionInfo> {
 		const { TWAP, current } = await this.getPrices(position);
 		return {
+			tokenId,
 			tickLower: position.tickLower as number,
 			tickUpper: position.tickUpper as number,
 			liquidity: position.liquidity as JSBI,

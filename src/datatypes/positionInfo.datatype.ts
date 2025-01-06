@@ -1,6 +1,7 @@
 import type JSBI from 'jsbi';
 
 export interface PositionInfo {
+	tokenId: JSBI,
 	tickLower: number;
 	tickUpper: number;
 	token0: string;
