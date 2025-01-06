@@ -10,7 +10,14 @@ import { LiquidityHelper } from './LiquidityHelper';
 import { type FeeAmount } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
 import { ERC20_ABI } from '../../abis/erc20';
-import { MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS, ONE_THOUSAND, SECONDS_IN_HOUR } from '../constants';
+import {
+	MAX_FEE_PER_GAS,
+	MAX_PRIORITY_FEE_PER_GAS,
+	ONE_THOUSAND,
+	RANGE_COEFFICIENT,
+	RANGE_COEFFICIENT_NEW,
+	SECONDS_IN_HOUR
+} from '../constants';
 import { getPriceFromTick } from '../utils';
 import { type ReallocateLiquidityResult } from '../datatypes/reallocateLiquidityResult.datatype';
 
@@ -41,7 +48,7 @@ export class V3AMMimpl implements V3AMM {
 
 	async addLiquidity(addLiquidityDTO: LiquidityDTO): Promise<AddLiquidityResult> {
 		const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
-		const transaction = await addLiquidityHelper.buildAddLiquidityTransaction();
+		const transaction = await addLiquidityHelper.buildAddLiquidityTransaction(addLiquidityDTO.rangeCoefficient);
 		const txRes = await this.signer.sendTransaction(transaction);
 		console.log({ txRes });
 		return { txRes };
@@ -84,7 +91,7 @@ export class V3AMMimpl implements V3AMM {
 
 	async reallocate(addLiquidityDTO: LiquidityDTO): Promise<ReallocateLiquidityResult> {
 		const addLiquidityHelper = new LiquidityHelper(this.chainId, this.signer, addLiquidityDTO);
-		const { data: addLiquidityCalldata } = await addLiquidityHelper.buildAddLiquidityTransaction();
+		const { data: addLiquidityCalldata } = await addLiquidityHelper.buildAddLiquidityTransaction(RANGE_COEFFICIENT_NEW);
 		const withdrawLiquidityCalldata = await this.getWithdrawLiquidityCalldata();
 		const erc20A = new Contract(addLiquidityDTO.tokenA.address, ERC20_ABI, this.signer);
 		const erc20B = new Contract(addLiquidityDTO.tokenB.address, ERC20_ABI, this.signer);
@@ -157,7 +164,7 @@ export class V3AMMimpl implements V3AMM {
 		const addLiquidityHelper = new LiquidityHelper(
 			this.chainId,
 			this.signer,
-			new LiquidityDTO(tokenA, tokenB, '0', '0', poolFee)
+			new LiquidityDTO(tokenA, tokenB, '0', '0', poolFee, RANGE_COEFFICIENT)
 		);
 		return {
 			TWAP: await addLiquidityHelper.getTWAP(),

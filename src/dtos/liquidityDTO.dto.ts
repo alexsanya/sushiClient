@@ -7,6 +7,7 @@ export class LiquidityDTO {
 		public tokenB: Token,
 		public amountA: BigintIsh,
 		public amountB: BigintIsh,
-		public poolFee: FeeAmount
+		public poolFee: FeeAmount,
+		public rangeCoefficient: number
 	) {}
 }

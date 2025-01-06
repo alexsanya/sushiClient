@@ -22,7 +22,6 @@ import {
 	MAX_PRIORITY_FEE_PER_GAS,
 	ONE,
 	ONE_THOUSAND,
-	RANGE_COEFFICIENT,
 	SECONDS_AGO_OBSERVATION,
 	SECONDS_IN_HOUR,
 	SLIPPAGE_TOLERANCE,
@@ -77,22 +76,23 @@ export class LiquidityHelper {
 		}
 	}
 
-	async buildAddLiquidityTransaction(): Promise<TransactionRequest> {
+	async buildAddLiquidityTransaction(rangeCoefficient: number): Promise<TransactionRequest> {
 		const poolContract = this.getPoolContract();
 		const pool = await this.getConfiguredPool(poolContract);
 
-		const position = this.getPosition(pool);
+		const position = this.getPosition(pool, rangeCoefficient);
 		const transaction = this.buildMintTransaction(this.user.address, position);
 		return transaction;
 	}
 
 	async buildWithdrawLiquidityTransaction(
 		tokenId: BigintIsh,
-		liquidityPercentage: Percent
+		liquidityPercentage: Percent,
+		rangeCoefficient: number
 	): Promise<TransactionRequest> {
 		const poolContract = this.getPoolContract();
 		const pool = await this.getConfiguredPool(poolContract);
-		const currentPosition = this.getPosition(pool);
+		const currentPosition = this.getPosition(pool, rangeCoefficient);
 		const collectOptions: Omit<CollectOptions, 'tokenId'> = {
 			expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(this.tokenA, ZERO),
 			expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(this.tokenB, ZERO),
@@ -110,15 +110,15 @@ export class LiquidityHelper {
 		return this.buildWithdrawTransaction(currentPosition, removeLiquidityOptions);
 	}
 
-	private getPosition(configuredPool: Pool): Position {
+	private getPosition(configuredPool: Pool, rangeCoefficient: number): Position {
 		return Position.fromAmounts({
 			pool: configuredPool,
 			tickLower:
 				nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) -
-				configuredPool.tickSpacing * RANGE_COEFFICIENT,
+				configuredPool.tickSpacing * rangeCoefficient,
 			tickUpper:
 				nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) +
-				configuredPool.tickSpacing * RANGE_COEFFICIENT,
+				configuredPool.tickSpacing * rangeCoefficient,
 			amount0: this.amountA,
 			amount1: this.amountB,
 			useFullPrecision: true

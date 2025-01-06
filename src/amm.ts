@@ -5,6 +5,7 @@ import { V3AMMimpl } from './infrastructure/v3AMM.impl';
 import { setUpFork } from './operations/setUpFork';
 import { CHAIN_CONFIGS } from '../chains';
 import { type FeeAmount } from '@uniswap/v3-sdk';
+import { RANGE_COEFFICIENT, RANGE_COEFFICIENT_NEW } from './constants';
 
 // eslint-disable-next-line
 (BigInt.prototype as any).toJSON = function () {
@@ -60,24 +61,24 @@ async function reallocate(): Promise<void> {
 	const chainId = (envs as Record<string, string>).CHAIN_ID;
 	const { CHAIN_ID, AMOUNT_A_NEW, AMOUNT_B_NEW } = CHAIN_CONFIGS[chainId];
 	const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
-	void (await v3Amm.reallocate(getLiquidityDTO(AMOUNT_A_NEW, AMOUNT_B_NEW)));
+	void (await v3Amm.reallocate(getLiquidityDTO(AMOUNT_A_NEW, AMOUNT_B_NEW, RANGE_COEFFICIENT_NEW)));
 }
 
-function getLiquidityDTO(amountA: BigintIsh, amountB: BigintIsh): LiquidityDTO {
+function getLiquidityDTO(amountA: BigintIsh, amountB: BigintIsh, rangeCoefficient: number): LiquidityDTO {
 	const chainId = (envs as Record<string, string>).CHAIN_ID;
 	const { CHAIN_ID, POOL_FEE, TOKEN_A_ADDRESS, TOKEN_B_ADDRESS, TOKEN_A_DECIMALS, TOKEN_B_DECIMALS } =
 		CHAIN_CONFIGS[chainId];
 	const tokenA: Token = new Token(Number(CHAIN_ID), TOKEN_A_ADDRESS, TOKEN_A_DECIMALS);
 	const tokenB: Token = new Token(Number(CHAIN_ID), TOKEN_B_ADDRESS, TOKEN_B_DECIMALS);
 	const poolFee: FeeAmount = POOL_FEE;
-	return new LiquidityDTO(tokenA, tokenB, amountA, amountB, poolFee);
+	return new LiquidityDTO(tokenA, tokenB, amountA, amountB, poolFee, rangeCoefficient);
 }
 
 async function addLiquidity(): Promise<void> {
 	const chainId = (envs as Record<string, string>).CHAIN_ID;
 	const { CHAIN_ID, AMOUNT_A, AMOUNT_B } = CHAIN_CONFIGS[chainId];
 	const v3Amm = new V3AMMimpl(CHAIN_ID, envs.USER_PRIVATE_KEY as string);
-	void (await v3Amm.addLiquidity(getLiquidityDTO(AMOUNT_A, AMOUNT_B)));
+	void (await v3Amm.addLiquidity(getLiquidityDTO(AMOUNT_A, AMOUNT_B, RANGE_COEFFICIENT)));
 }
 
 async function withdrawLiquidity(): Promise<void> {
