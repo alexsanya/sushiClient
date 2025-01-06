@@ -1,4 +1,4 @@
-import { CHAIN_ID } from '../chains/sepolia';
+import { CHAIN_ID } from './chains/sepolia';
 import { setUpFork } from './operations/setUpFork';
 import { addLiquidity, reallocate } from './amm.core';
 import { V3AMMimpl } from './infrastructure/v3AMM.impl';

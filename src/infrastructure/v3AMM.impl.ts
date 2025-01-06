@@ -4,7 +4,7 @@ import { LiquidityDTO } from '../dtos';
 import { Contract, ethers, JsonRpcProvider, type TransactionRequest, Wallet } from 'ethers';
 import { envs } from '../config/env';
 import INONFUNGIBLE_POSITION_MANAGER from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
-import { CHAIN_CONFIGS } from '../../chains';
+import { CHAIN_CONFIGS } from '../chains';
 import { type BigintIsh, CurrencyAmount, Token } from '@uniswap/sdk-core';
 import { LiquidityHelper } from './LiquidityHelper';
 import { type CollectOptions, NonfungiblePositionManager, type FeeAmount } from '@uniswap/v3-sdk';

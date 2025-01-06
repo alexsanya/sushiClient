@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import commandLineArgs from 'command-line-args';
 import { get } from 'env-var';
-import { CHAIN_ID as SEPOLIA_CHAIN_ID } from '../../chains/sepolia';
-import { CHAIN_ID as BSC_CHAIN_ID } from '../../chains/bsc';
+import { CHAIN_ID as SEPOLIA_CHAIN_ID } from '../chains/sepolia';
+import { CHAIN_ID as BSC_CHAIN_ID } from '../chains/bsc';
 
 const optionDefinitions = [
 	{ name: 'command', defaultOption: true },

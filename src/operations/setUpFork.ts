@@ -1,6 +1,6 @@
 import { Contract, JsonRpcProvider, Wallet } from 'ethers';
 import { envs } from '../config/env';
-import { CHAIN_CONFIGS } from '../../chains';
+import { CHAIN_CONFIGS } from '../chains';
 import { ERC20_ABI } from '../../abis/erc20';
 
 export async function setUpFork(chainId: string): Promise<void> {

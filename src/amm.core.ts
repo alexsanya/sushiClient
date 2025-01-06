@@ -1,5 +1,5 @@
 import { type BigintIsh, Token } from '@uniswap/sdk-core';
-import { CHAIN_CONFIGS } from '../chains';
+import { CHAIN_CONFIGS } from './chains';
 import { envs } from './config/env';
 import { RANGE_COEFFICIENT, RANGE_COEFFICIENT_NEW } from './constants';
 import { V3AMMimpl } from './infrastructure/v3AMM.impl';

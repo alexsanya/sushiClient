@@ -10,7 +10,7 @@ import {
 	type RemoveLiquidityOptions,
 	tickToPrice
 } from '@uniswap/v3-sdk';
-import { CHAIN_CONFIGS } from '../../chains';
+import { CHAIN_CONFIGS } from '../chains';
 import { type Contract, ethers, JsonRpcProvider, type TransactionRequest, type Wallet } from 'ethers';
 import { envs } from '../config/env';
 import { type LiquidityDTO } from '../dtos';
